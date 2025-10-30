@@ -18,8 +18,10 @@
               bun
               pylint
               (python3.withPackages (python-pkgs: with python-pkgs;[
+                email-validator
                 fastapi
                 pydantic
+                tzdata
                 uvicorn
               ]))
               vscodium

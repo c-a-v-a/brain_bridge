@@ -17,7 +17,7 @@ class User(BaseModel):
     email: EmailStr = Field(..., min_length=5)
     password: str = Field(..., min_length=8)
     name: str = Field(..., min_length=1, max_length=100)
-    surename: str = Field(..., min_length=1, max_length=100)
+    surname: str = Field(..., min_length=1, max_length=100)
     is_admin: bool = Field(default=False)
 
     class Config:
@@ -32,7 +32,7 @@ class UserGet(BaseModel):
     username: str = Field(..., min_length=3)
     email: EmailStr = Field(..., min_length=5)
     name: str = Field(..., min_length=1, max_length=100)
-    surename: str = Field(..., min_length=1, max_length=100)
+    surname: str = Field(..., min_length=1, max_length=100)
     is_admin: bool = Field(default=False)
 
     class Config:
@@ -48,7 +48,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     name: Optional[str] = None
-    surename: Optional[str] = None
+    surname: Optional[str] = None
     is_admin: Optional[bool] = None
 
     class Config:

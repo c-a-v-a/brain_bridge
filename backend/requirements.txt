@@ -1,5 +1,9 @@
+cryptography
 email-validator
 fastapi
-uvicorn
+motor
+pwdlib
 pydantic
+pyjwt
 tzdata
+uvicorn

@@ -1,45 +1,37 @@
-"""
-Test module for FastAPI backend.
-"""
+"""FastAPI backend for BrainBridge app."""
+
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 
+from crud.mongodb_connector import MongoDBConnector
+from routers.auth import router as auth_router
+
 app = FastAPI()
-origins = [ "http://localhost:5173" ]
+origins = ["http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-
-class Message(BaseModel):
-    name: str
-    message: str
+app.include_router(auth_router, prefix="/api")
 
 
-messages: List[Message] = []
-
-
-@app.get("/api/message")
-def get_message():
-    if not messages:
-        raise HTTPException(status_code=204,
-                            detail="No messages left on the stack")
-    else:
-        return messages.pop(0)
-
-
-@app.post("/api/message")
-def add_message(message: Message):
-    messages.append(message)
-    return {"status": "success", "message": message}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Define the app lifecycle functions."""
+    # startup code
+    yield
+    # shutdown code
+    client = MongoDBConnector()
+    client.close()
 
 
 if __name__ == "__main__":

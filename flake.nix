@@ -16,11 +16,16 @@
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
               bun
+              mongosh
               pylint
               (python3.withPackages (python-pkgs: with python-pkgs;[
+                cryptography
                 email-validator
                 fastapi
+                motor
+                pwdlib
                 pydantic
+                pyjwt
                 tzdata
                 uvicorn
               ]))

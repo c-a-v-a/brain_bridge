@@ -8,6 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from crud.mongodb_connector import MongoDBConnector
 from routers.auth import router as auth_router
 
+from crud.mongodb_connector import MongoDBConnector
+from routers.auth import router as auth_router
+
 app = FastAPI()
 origins = [
     "http://localhost:5173",

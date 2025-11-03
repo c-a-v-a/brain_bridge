@@ -1,28 +1,31 @@
-"""
-Module responsible for handling user authentication and JWT tokens.
-"""
+"""Module responsible for handling user authentication and JWT tokens."""
 
 import jwt
-import os
-from datetime import timedelta
-from fastapi import Depends
+from datetime import timedelta, datetime, timezone
+from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from typing import Optional
 
 from crud.user import get_user_by_email
-from models.user import UserGet, UserLogin
+from models.user import UserGet, UserLogin, User
 from settings import Settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 PASSWORD_HASH = PasswordHash.recommended()
 settings = Settings()
 
 
 def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    """
-    Creates a new token and encodes information from the data argument
-    into the tokens.
+    """Create a JWT token encoding the provided data.
+
+    Args:
+        data (dict): The payload data to include in the token.
+        expires_delta (Optional[timedelta]): Time until the token expires.
+        Defaults to 30 minutes.
+
+    Returns:
+        str: Encoded JWT token.
     """
     to_encode = data.copy()
 
@@ -39,33 +42,58 @@ def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
 
 
 def decode_token(token: str) -> dict:
-    """
-    Decode token from token string to dict.
+    """Decode a JWT token into its payload.
+
+    Args:
+        token (str): JWT token string.
+
+    Returns:
+        dict: Decoded payload.
     """
     return jwt.decode(token, settings.SECRET_KEY,
                       algorithms=[settings.ALGORITHM])
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    """ Verify that the plain password matches it hasehd counterpart. """
+    """Verify that a plain password matches the hashed password.
+
+    Args:
+        plain (str): Plain-text password.
+        hashed (str): Hashed password from database.
+
+    Returns:
+        bool: True if passwords match, False otherwise.
+    """
     return PASSWORD_HASH.verify(plain, hashed)
 
 
 def get_password_hash(plain: str) -> str:
-    """ Get a hashed version of the password for storage purposes. """
+    """Hash a plain password for storage.
+
+    Args:
+        plain (str): Plain-text password.
+
+    Returns:
+        str: Hashed password.
+    """
     return PASSWORD_HASH.hash(plain)
 
 
-def authenticate_user(user: UserLogin) -> Optional[UserGet]:
+async def authenticate_user(user: UserLogin) -> Optional[User]:
+    """Authenticate a user by email and password.
+
+    Args:
+        user (UserLogin): User credentials.
+
+    Returns:
+        Optional[UserGet]: Authenticated user if credentials are correct, else
+        None.
     """
-    Try to match given user, with one of the database users and veirfy that
-    given password is correct.
-    """
-    auth_user = get_user_by_email(user.email)
-    
+    auth_user = await get_user_by_email(user.email)
+
     if not user:
         return None
-    
+
     if not verify_password(user.password, auth_user.password):
         return None
 
@@ -73,20 +101,33 @@ def authenticate_user(user: UserLogin) -> Optional[UserGet]:
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserGet:
-    """ Get current bearer of the token. Only works if the token is valid. """
+    """Retrieve the current authenticated user from a JWT token.
+
+    Args:
+        token (str): Bearer token from the request.
+
+    Raises:
+        HTTPException: If the token is invalid or user not found.
+
+    Returns:
+        UserGet: Authenticated user.
+    """
+    if len(token) < 1:
+        raise HTTPException(401," Missing token")
+
     data = decode_token(token)
 
     if not data or data.get("type") != "access":
-        raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token")
-    
+        raise HTTPException(401," Invalid token")
+
     email = data.get("sub")
-    user = get_user_by_email(email)
+
+    if not email:
+        raise HTTPException(401," Invalid token")
+
+    user = await get_user_by_email(email)
 
     if not user:
-        raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found")
+        raise HTTPException(401, "User not found")
 
     return user

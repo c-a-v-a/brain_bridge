@@ -22,10 +22,10 @@
                 cryptography
                 email-validator
                 fastapi
-                motor
                 pwdlib
                 pydantic
                 pyjwt
+                pymongo
                 tzdata
                 uvicorn
               ]))

@@ -1,4 +1,4 @@
-"""Module that handles models for User objects."""
+"""Module defining Pydantic models for User objects and authentication."""
 
 from pydantic import BaseModel, EmailStr, Field, BeforeValidator
 from typing import Annotated, Optional
@@ -7,8 +7,8 @@ PyObjectId = Annotated[str, BeforeValidator(str)]
 
 
 class User(BaseModel):
-    """
-    Base model for User objects. This model is also used to create a new user.
+    """Base model for a User object, including all attributes stored in the
+    database.
     """
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: str = Field(..., min_length=3)
@@ -23,8 +23,22 @@ class User(BaseModel):
         arbitrary_types_allowed = True
 
 
+class UserCreate(BaseModel):
+    """Model for creating new users."""
+    username: str = Field(..., min_length=3)
+    email: EmailStr = Field(..., min_length=5)
+    password: str = Field(..., min_length=8)
+    name: str = Field(..., min_length=1, max_length=100)
+    surname: str = Field(..., min_length=1, max_length=100)
+    is_admin: bool = Field(default=False)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+
+
 class UserGet(BaseModel):
-    """Model for retrieving User data."""
+    """Model for responses. Sends user data without the password."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: str = Field(..., min_length=3)
     email: EmailStr = Field(..., min_length=5)
@@ -38,9 +52,10 @@ class UserGet(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    """
-    Model for update operations on user. Id should be passed from route and not
-    included in the model.
+    """Model for updating user information.
+
+    Fields are all optional; the user ID should be provided separately
+    (e.g., via route parameters).
     """
     username: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -55,6 +70,7 @@ class UserUpdate(BaseModel):
 
 
 class UserLogin(BaseModel):
+    """Model for user login credentials with email and password."""
     email: EmailStr = Field(..., min_length=5)
     password: str = Field(..., min_length=8)
 

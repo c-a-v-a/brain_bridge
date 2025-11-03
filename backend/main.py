@@ -2,16 +2,17 @@
 
 import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
 
 from crud.mongodb_connector import MongoDBConnector
 from routers.auth import router as auth_router
 
 app = FastAPI()
-origins = ["http://localhost:5173"]
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,8 +26,8 @@ app.include_router(auth_router, prefix="/api")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Define the app lifecycle functions."""
+async def lifespan():
+    """Define the app lifecycle."""
     # startup code
     yield
     # shutdown code

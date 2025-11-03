@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { UserCreate, UserGet } from '$lib/models/user.models';
-	const PUBLIC_API_URL = "http://localhost:5173"
+	import { register } from '$lib/api/userApi';
+	import type { UserCreate, UserGet } from '$lib/models/userModels';
 
-	let newUser: UserCreate = {
+	let user: UserCreate = {
 		username: '',
 		name: '',
 		surname: '',
@@ -12,28 +12,13 @@
 	};
 
 	async function handleSubmit() {
-		let error = null;
+		const result: UserGet | Error = await register(user);
 
-		try {
-			const response = await fetch(`${PUBLIC_API_URL}/register`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(newUser)
-			});
-
-			if (response.ok) {
-				const registeredUser: UserGet = await response.json();
-				// console.log('Zarejestrowano użytkownika:', registeredUser);
-				// goto('/login');
-			} else {
-				const errorData = await response.json();
-				error = errorData.detail || `Server error: ${response.status}`;
-			}
-		} catch (e) {
-			error = 'Couldnt connect to API.';
-			console.error(e);
+		if (Error.isError(result)) {
+			console.log(result.message);
+		} else {
+			console.log("Registered.");
+			console.log(result);
 		}
 	}
 </script>
@@ -46,9 +31,9 @@
 		<div class="absolute inset-0 z-0 backdrop-blur-3xl backdrop-filter"></div>
 		<div class="relative z-10 max-w-md text-left lg:mt-20 lg:text-left">
 			<h1 class="mb-4 text-4xl font-extrabold leading-tight opacity-90 lg:text-5xl">
-				The bridge between ideas.
+				BrainBridge
 			</h1>
-			<p class="text-2xl font-semibold opacity-80 lg:text-3xl">Brings people together.</p>
+			<p class="text-2xl font-semibold opacity-80 lg:text-3xl">The bridge between ideas. Brings people together.</p>
 		</div>
 	</div>
 
@@ -66,9 +51,9 @@
 							type="text"
 							id="name"
 							name="name"
-							bind:value={newUser.name}
+							bind:value={user.name}
 							class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                     focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                     			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 							placeholder="Your name"
 							required
 						/>
@@ -79,9 +64,9 @@
 							type="text"
 							id="surename"
 							name="surename"
-							bind:value={newUser.surname}
+							bind:value={user.surname}
 							class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                     focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                     			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 							placeholder="Your last name"
 							required
 						/>
@@ -94,9 +79,9 @@
 						type="text"
 						id="username"
 						name="username"
-						bind:value={newUser.username}
+						bind:value={user.username}
 						class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                   focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                   			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 						placeholder="einstein9000"
 						required
 					/>
@@ -108,9 +93,9 @@
 						type="email"
 						id="email"
 						name="email"
-						bind:value={newUser.email}
+						bind:value={user.email}
 						class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                   focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                   			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 						placeholder="your.email@example.com"
 						required
 					/>
@@ -122,9 +107,9 @@
 						type="password"
 						id="password"
 						name="password"
-						bind:value={newUser.password}
+						bind:value={user.password}
 						class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                   focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                   			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 						placeholder="Minimum 8 characters"
 						required
 					/>
@@ -134,8 +119,8 @@
 					<button
 						type="submit"
 						class="flex w-full justify-center rounded-lg border border-transparent bg-teal-950 px-4
-                   py-3 text-lg font-medium text-white shadow-sm hover:bg-cyan-800
-                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                   			py-3 text-lg font-medium text-white shadow-sm hover:bg-cyan-800
+                   			focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
 					>
 						Create an Account
 					</button>

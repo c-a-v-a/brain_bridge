@@ -1,34 +1,26 @@
 <script lang="ts">
-	const PUBLIC_API_URL = "http://localhost:5173"
+	import { validate } from "$lib/api/tokenApi";
+	import { login } from "$lib/api/userApi";
+	import type { TokenPair } from "$lib/models/tokenModels";
+	import type { UserLogin } from "$lib/models/userModels";
+	import { tokens } from "$lib/store/tokens";
+	import { get } from "svelte/store";
 
-	let userLog = {
+
+	let user: UserLogin = {
 		email: '',
 		password: ''
 	};
 
 	async function handleSubmit() {
-		let error = null;
+		const result: TokenPair | Error = await login(user);
 
-		try {
-			const response = await fetch(`${PUBLIC_API_URL}/login`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(userLog)
-			});
-
-			if (response.ok) {
-				const tokens = await response.json();
-				console.log('Login udany, tokeny:', tokens);
-				// goto('/dashboard');
-			} else {
-				const errorData = await response.json();
-				error = errorData.detail || `Server error: ${response.status}`;
-			}
-		} catch (e) {
-			error = 'Couldnt connect to API.';
-			console.error(e);
+		if (Error.isError(result)) {
+			console.log(result.message);
+		} else {
+			tokens.set(result);
+			console.log("Authenticated");
+			console.log(get(tokens));
 		}
 	}
 </script>
@@ -41,9 +33,9 @@
 		<div class="absolute inset-0 z-0 backdrop-blur-3xl backdrop-filter"></div>
 		<div class="relative z-10 max-w-md text-left lg:mt-20 lg:text-left">
 			<h1 class="mb-4 text-4xl font-extrabold leading-tight opacity-90 lg:text-5xl">
-				The bridge between ideas.
+				BrainBridge
 			</h1>
-			<p class="text-2xl font-semibold opacity-80 lg:text-3xl">Brings people together.</p>
+			<p class="text-2xl font-semibold opacity-80 lg:text-3xl">The bridge between ideas. Brings people together.</p>
 		</div>
 	</div>
 
@@ -58,9 +50,9 @@
 						type="text"
 						id="username"
 						name="username"
-						bind:value={userLog.email}
+						bind:value={user.email}
 						class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                   focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                   			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 						placeholder="your.email@example.com"
 						required
 					/>
@@ -72,9 +64,9 @@
 						type="password"
 						id="password"
 						name="password"
-						bind:value={userLog.password}
+						bind:value={user.password}
 						class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 shadow-sm
-                   focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                   			focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
 						placeholder="Minimum 8 characters"
 						required
 					/>
@@ -84,8 +76,8 @@
 					<button
 						type="submit"
 						class="flex w-full justify-center rounded-lg border border-transparent bg-teal-950 px-4
-                   py-3 text-lg font-medium text-white shadow-sm hover:bg-cyan-800
-                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                   			py-3 text-lg font-medium text-white shadow-sm hover:bg-cyan-800
+                   			focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
 					>
 						Log in
 					</button>

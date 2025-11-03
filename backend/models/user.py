@@ -1,18 +1,16 @@
-"""
-Module that handles models for User objects.
-"""
+"""Module that handles models for User objects."""
 
-# TODO: Connect with mongodb
+from pydantic import BaseModel, EmailStr, Field, BeforeValidator
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+PyObjectId = Annotated[str, BeforeValidator(str)]
 
 
 class User(BaseModel):
     """
     Base model for User objects. This model is also used to create a new user.
     """
-    id: int = Field(...)
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: str = Field(..., min_length=3)
     email: EmailStr = Field(..., min_length=5)
     password: str = Field(..., min_length=8)
@@ -21,14 +19,13 @@ class User(BaseModel):
     is_admin: bool = Field(default=False)
 
     class Config:
-        from_attributes = True
+        populate_by_name = True
+        arbitrary_types_allowed = True
 
 
 class UserGet(BaseModel):
-    """
-    Model for retrieving User data.
-    """
-    id: int = Field(...)
+    """Model for retrieving User data."""
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: str = Field(..., min_length=3)
     email: EmailStr = Field(..., min_length=5)
     name: str = Field(..., min_length=1, max_length=100)
@@ -36,7 +33,8 @@ class UserGet(BaseModel):
     is_admin: bool = Field(default=False)
 
     class Config:
-        from_attributes = True
+        populate_by_name = True
+        arbitrary_types_allowed = True
 
 
 class UserUpdate(BaseModel):
@@ -52,4 +50,14 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
 
     class Config:
-        from_attributes = True
+        populate_by_name = True
+        arbitrary_types_allowed = True
+
+
+class UserLogin(BaseModel):
+    email: EmailStr = Field(..., min_length=5)
+    password: str = Field(..., min_length=8)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True

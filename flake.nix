@@ -22,12 +22,15 @@
                 cryptography
                 email-validator
                 fastapi
+                httptools
                 pwdlib
                 pydantic
                 pyjwt
                 pymongo
                 tzdata
                 uvicorn
+                uvloop
+                websockets
               ]))
               vscodium
             ];

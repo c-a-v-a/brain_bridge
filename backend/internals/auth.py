@@ -2,7 +2,7 @@
 
 import jwt
 from datetime import timedelta, datetime, timezone
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, WebSocket
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from typing import Optional
@@ -129,5 +129,47 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserGet:
 
     if not user:
         raise HTTPException(401, "User not found")
+
+    return user
+
+
+async def get_current_user_ws(websocket: WebSocket) -> UserGet:
+    """Retrieve the authenticated user for WebSockets using the JWT token
+    passed via the WebSocket subprotocols.
+
+    Args:
+        websocket (WebSocket): Incoming WebSocket connection.
+
+    Raises:
+        HTTPException: If token is invalid or user is not found.
+
+    Returns:
+        UserGet: Authenticated user.
+    """
+    protocols = websocket.headers.get("sec-websocket-protocol", "")
+    parts = [p.strip() for p in protocols.split(",")]
+
+    if len(parts) < 2:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    token = parts[1]
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    data = decode_token(token)
+
+    if not data or data.get("type") != "access":
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    email = data.get("sub")
+
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = await get_user_by_email(email)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
 
     return user

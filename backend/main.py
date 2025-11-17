@@ -10,6 +10,8 @@ from routers.auth import router as auth_router
 
 from crud.mongodb_connector import MongoDBConnector
 from routers.auth import router as auth_router
+from routers.chat import router as chat_router
+from routers.ideas import router as ideas_router
 
 app = FastAPI()
 origins = [
@@ -26,6 +28,8 @@ app.add_middleware(
 )
 
 app.include_router(auth_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(ideas_router, prefix="/api")
 
 
 @asynccontextmanager

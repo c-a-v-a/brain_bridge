@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { validate } from "$lib/api/tokenApi";
+	import { refresh, validate } from "$lib/api/tokenApi";
 	import { login } from "$lib/api/userApi";
 	import type { TokenPair } from "$lib/models/tokenModels";
 	import type { UserLogin } from "$lib/models/userModels";
 	import { tokens } from "$lib/store/tokens";
 	import { goto } from '$app/navigation';
 	import { get } from "svelte/store";
+	import { onMount } from "svelte";
 
 
 	let user: UserLogin = {
@@ -25,6 +26,12 @@
 			await goto('/');
 		}
 	}
+
+	onMount(async () => {
+		if (!Error.isError(await refresh())) {
+			goto('/');
+		}
+	});
 </script>
 
 <div class="flex min-h-screen flex-col bg-gray-100 lg:flex-row">

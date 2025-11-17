@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
+	import { getTokens, refresh } from "$lib/api/tokenApi";
+	import type { TokenPair } from "$lib/models/tokenModels";
   import { onMount } from "svelte";
 
   interface ChatMessage {
@@ -10,16 +13,18 @@
   let messages: ChatMessage[] = [];
   let messageText = "";
 
-  let ws: WebSocket; // WebSocket instance
+  let ws: WebSocket;
 
   function connectWebSocket() {
-    // if (!token) {
-    //   console.error("No token found!");
-    //   return;
-    // }
+    const tokens: TokenPair | null = getTokens();
+
+    if (!tokens) {
+      console.error("No token found!");
+      return;
+    }
 
     // Connect to the WebSocket with subprotocol "authorization" and token
-    ws = new WebSocket("ws://localhost:8000/api/chat/ws");
+    ws = new WebSocket("ws://localhost:8000/api/chat/ws", ["authorization", tokens.access_token]);
 
     ws.onopen = () => {
       console.log("Connected to chat WebSocket");
@@ -50,7 +55,11 @@
     messageText = "";
   }
 
-  onMount(() => {
+  onMount(async () => {
+    if (Error.isError(await refresh())) {
+      goto("/login");
+    }
+
     connectWebSocket();
   });
 </script>

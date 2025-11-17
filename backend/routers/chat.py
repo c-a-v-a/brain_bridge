@@ -27,17 +27,16 @@ async def chat(websocket: WebSocket) -> None:
     Returns:
         None
     """
+    await websocket.accept(subprotocol="authorization")
+
     try:
         user = await get_current_user_ws(websocket)
-        username = user.username
     except Exception:
-        username = "guest"
-        # await websocket.close(code=1008)
-        # return
+        await websocket.close(code=1008)
+        return
 
+    username = user.name
 
-    print(username)
-    # await websocket.accept()
     await connect_user(username, websocket)
 
     try:

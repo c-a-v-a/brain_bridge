@@ -2,6 +2,8 @@
 	import { register } from '$lib/api/userApi';
 	import type { UserCreate, UserGet } from '$lib/models/userModels';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { refresh } from '$lib/api/tokenApi';
 
 	let user: UserCreate = {
 		username: '',
@@ -23,6 +25,12 @@
 			await goto('/login');
 		}
 	}
+
+	onMount(async () => {
+		if (!Error.isError(await refresh())) {
+			goto('/');
+		}
+	});
 </script>
 
 <div class="flex min-h-screen flex-col bg-gray-100 lg:flex-row">

@@ -29,8 +29,6 @@ async def connect_user(username: str, websocket: WebSocket) -> None:
     Returns:
         None
     """
-    await websocket.accept()
-
     active_connections[username] = websocket
 
 

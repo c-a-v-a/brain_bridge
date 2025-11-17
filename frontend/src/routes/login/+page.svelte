@@ -4,6 +4,7 @@
 	import type { TokenPair } from "$lib/models/tokenModels";
 	import type { UserLogin } from "$lib/models/userModels";
 	import { tokens } from "$lib/store/tokens";
+	import { goto } from '$app/navigation';
 	import { get } from "svelte/store";
 
 
@@ -21,6 +22,7 @@
 			tokens.set(result);
 			console.log("Authenticated");
 			console.log(get(tokens));
+			await goto('/');
 		}
 	}
 </script>

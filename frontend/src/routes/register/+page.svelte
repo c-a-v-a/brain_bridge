@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { register } from '$lib/api/userApi';
 	import type { UserCreate, UserGet } from '$lib/models/userModels';
+	import { goto } from '$app/navigation';
 
 	let user: UserCreate = {
 		username: '',
@@ -19,6 +20,7 @@
 		} else {
 			console.log("Registered.");
 			console.log(result);
+			await goto('/login');
 		}
 	}
 </script>

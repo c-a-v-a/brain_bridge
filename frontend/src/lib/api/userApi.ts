@@ -5,6 +5,7 @@
 
 import type { TokenPair } from "$lib/models/tokenModels";
 import type { UserCreate, UserGet, UserLogin } from "$lib/models/userModels";
+import { setTokens } from "./tokenApi";
 
 const API_ROUTE = "http://localhost:8000/api/auth";
 
@@ -28,6 +29,7 @@ export async function login(user: UserLogin): Promise<TokenPair | Error> {
     
     if (response.ok) {
       const tokens: TokenPair = await response.json();
+      setTokens(tokens);
       return tokens;
     }
     

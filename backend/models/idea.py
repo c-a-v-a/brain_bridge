@@ -8,8 +8,9 @@ class Idea(BaseModel):
     """Full model representing an Idea document stored in MongoDB."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str = Field(..., min_length=1, max_length=200)
-    user_id: PyObjectId = Field(..., description="ID użytkownika (jako ObjectId w stringu)")
+    user_id: PyObjectId
     desc: str = Field(..., min_length=1)
+    long_desc: Optional[str] = None
 
     class Config:
         populate_by_name = True
@@ -25,22 +26,40 @@ class IdeaCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     user_id: PyObjectId
     desc: str = Field(..., min_length=1)
+    long_desc: Optional[str] = None
 
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
 
 
-class IdeaGet(BaseModel):
+class IdeaGet(BaseModel):  
     """Model returned in API responses.
 
     This model hides internal MongoDB representation details
-    and exposes clean, client-side data.
+    and exposes clean, client-side data. without long_desc
     """
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     user_id: PyObjectId
     desc: str
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+
+
+class IdeaFull(BaseModel):
+    """Model returned in API responses.
+
+    This model hides internal MongoDB representation details
+    and exposes clean, client-side data. with long_desc
+    """
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    title: str
+    user_id: PyObjectId
+    desc: str
+    long_desc: Optional[str] = None
 
     class Config:
         populate_by_name = True
@@ -56,6 +75,7 @@ class IdeaUpdate(BaseModel):
     title: Optional[str] = None
     user_id: Optional[PyObjectId] = None
     desc: Optional[str] = None
+    long_desc: Optional[str] = None
 
     class Config:
         populate_by_name = True

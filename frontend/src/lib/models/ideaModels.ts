@@ -1,5 +1,10 @@
 export type PyObjectId = string;
 
+export interface Link {
+    url: string;
+    text: string;
+}
+
 /**
  * @description Model dla danych do utworzenia nowego pomysłu.
  */

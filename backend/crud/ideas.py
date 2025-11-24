@@ -34,7 +34,7 @@ async def get_idea(idea_id: str) -> Optional[IdeaFull]:
 
 
 async def get_all_ideas() -> List[IdeaGet]:
-    """Pobierz wszystkie idee (mały model, bez long_desc)."""
+    """Pobierz wszystkie idee (mały model, bez long_description)."""
     ideas: List[IdeaGet] = []
 
     async for doc in ideas_collection.find():
@@ -44,7 +44,7 @@ async def get_all_ideas() -> List[IdeaGet]:
 
 
 async def get_all_ideas_full() -> List[IdeaFull]:
-    """Pobierz wszystkie idee (pełny model, z long_desc)."""
+    """Pobierz wszystkie idee (pełny model, z long_description)."""
     ideas: List[IdeaFull] = []
 
     async for doc in ideas_collection.find():

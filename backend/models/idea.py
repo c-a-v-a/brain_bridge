@@ -1,7 +1,12 @@
 from pydantic import BaseModel, Field, BeforeValidator
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List
 
 PyObjectId = Annotated[str, BeforeValidator(str)]
+
+
+class Link(BaseModel):
+    url: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1)
 
 
 class Idea(BaseModel):
@@ -9,8 +14,10 @@ class Idea(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str = Field(..., min_length=1, max_length=200)
     user_id: PyObjectId
-    desc: str = Field(..., min_length=1)
-    long_desc: Optional[str] = None
+    description: str = Field(..., min_length=1)
+    long_description: Optional[str] = None
+    links: List[Link]
+    wanted_contributors: str
 
     class Config:
         populate_by_name = True
@@ -25,8 +32,11 @@ class IdeaCreate(BaseModel):
     """
     title: str = Field(..., min_length=1, max_length=200)
     user_id: PyObjectId
-    desc: str = Field(..., min_length=1)
-    long_desc: Optional[str] = None
+    description: str = Field(..., min_length=1)
+    long_description: Optional[str] = None
+    links: List[Link]
+    wanted_contributors: str
+
 
     class Config:
         populate_by_name = True
@@ -37,12 +47,12 @@ class IdeaGet(BaseModel):
     """Model returned in API responses.
 
     This model hides internal MongoDB representation details
-    and exposes clean, client-side data. without long_desc
+    and exposes clean, client-side data. without long_description
     """
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     user_id: PyObjectId
-    desc: str
+    description: str
 
     class Config:
         populate_by_name = True
@@ -53,13 +63,15 @@ class IdeaFull(BaseModel):
     """Model returned in API responses.
 
     This model hides internal MongoDB representation details
-    and exposes clean, client-side data. with long_desc
+    and exposes clean, client-side data. with long_description
     """
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     user_id: PyObjectId
-    desc: str
-    long_desc: Optional[str] = None
+    description: str
+    long_description: Optional[str] = None
+    links: List[Link]
+    wanted_contributors: str
 
     class Config:
         populate_by_name = True
@@ -71,11 +83,12 @@ class IdeaUpdate(BaseModel):
 
     All fields are optional; only the ones provided will be updated.
     """
-
     title: Optional[str] = None
     user_id: Optional[PyObjectId] = None
-    desc: Optional[str] = None
-    long_desc: Optional[str] = None
+    description: Optional[str] = None
+    long_description: Optional[str] = None
+    links: List[Link]
+    wanted_contributors: str
 
     class Config:
         populate_by_name = True

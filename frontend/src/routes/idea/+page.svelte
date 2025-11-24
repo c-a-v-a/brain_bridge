@@ -56,12 +56,14 @@
 	<main
 		class="relative z-10 flex flex-col h-screen w-screen items-center justify-center"
 	>
+    {#if idea}
     <div
       class="px-10 rounded-4xl min-w-1/3 bg-violet-800/30 p-3 text-center text-lg mb-5
                             font-bold text-white shadow-inner shadow-black/20"
     >
       {idea.title || 'Brak Tytułu'}
     </div>
+    {/if}
 		<!-- Kontener na wyświetlanie pomysłów (wyśrodkowany) -->
     <div class="flex flex-col w-full items-center justify-center">
       {#if loading}

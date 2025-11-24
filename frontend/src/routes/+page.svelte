@@ -3,6 +3,7 @@
 	import backgroundImage from '$lib/assets/dashboard-bg.png';
 	import { getIdeas } from '$lib/api/ideasApi';
 	import type { IdeaGet } from '$lib/models/ideaModels';
+	import { ideasStore } from '$lib/store/ideas';
 
 	// === STATE VARIABLES FOR IDEAS ===
 	let ideas: Array<IdeaGet> = []; // Full list of ideas
@@ -15,12 +16,23 @@
 	// Picks a random idea from the ideas array and sets it as currentIdea
 	function pickRandomIdea() {
 		if (ideas.length > 0) {
-			const randomIndex = Math.floor(Math.random() * ideas.length);
-			currentIdea = ideas[randomIndex];
+			[currentIdea] = ideas.slice(-1);
+			
+			ideas = ideas.filter((x,i) => i !== ideas.length - 1);
+
+			ideasStore.update(xs => [...xs, currentIdea as IdeaGet]);
 		} else {
 			currentIdea = null;
 		}
 	}
+
+	function filterOutExisting(arr: IdeaGet[]): IdeaGet[] {
+		let existing: IdeaGet[];
+		ideasStore.subscribe(v => existing = v)();
+
+		return arr.filter(x => !existing.some(e => e.id === x.id));
+	}
+
 
 	// Loading all ideas from API
 	async function loadIdeas() {
@@ -55,6 +67,9 @@
 					}
 				];
 			}
+
+			ideas = filterOutExisting(ideas);
+
 			pickRandomIdea();
 		}
 		isLoading = false;

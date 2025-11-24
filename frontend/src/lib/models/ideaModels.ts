@@ -31,3 +31,13 @@ export interface IdeaGet {
     user_id: PyObjectId;
     description: string;
 }
+
+export interface IdeaFull {
+    id: PyObjectId;
+    title: string;
+    user_id: PyObjectId;
+    description: string;
+    long_description?: string;
+    links: Link[];
+    wanted_contributors: string;
+}

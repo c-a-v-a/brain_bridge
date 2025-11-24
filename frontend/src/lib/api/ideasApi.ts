@@ -3,7 +3,7 @@
  * @description Provides api helper functions for managing ideas.
  */
 
-import type { IdeaCreate, IdeaGet } from "$lib/models/ideaModels";
+import type { IdeaCreate, IdeaFull, IdeaGet } from "$lib/models/ideaModels";
 
 const API_ENDPOINT = "http://localhost:8000/api/ideas";
 
@@ -56,6 +56,30 @@ export async function getIdeas(): Promise<IdeaGet[] | Error> {
 
         if (response.ok) {
             const ideas: IdeaGet[] = await response.json();
+            return ideas;
+        }
+
+        const errorText = await response.text();
+        const error: Error = new Error(`Błąd serwera (${response.status}): ${errorText}`);
+        return error;
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "Nie można połączyć się z API.";
+        return new Error(`Błąd połączenia: ${errorMessage}`);
+    }
+}
+
+export async function getFullIdea(id: string): Promise<IdeaFull | Error> {
+    try {
+        // GET request do tego samego endpointu
+        const response = await fetch(`${API_ENDPOINT}/full/${id}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const ideas: IdeaFull = await response.json();
             return ideas;
         }
 

@@ -1,17 +1,28 @@
-export type PyObjectId = string; 
+export type PyObjectId = string;
 
 /**
  * @description Model dla danych do utworzenia nowego pomysłu.
  */
+export interface Link {
+    url: string;
+    text: string;
+}
+
+/**
+ * @description Model for creating a new idea.
+ */
 export interface IdeaCreate {
     title: string;
     user_id: PyObjectId;
-    desc: string;
+    description: string;
+    long_description?: string;
+    links: Link[];
+    wanted_contributors: string;
 }
 
 export interface IdeaGet {
-    id: PyObjectId; // Zmienione z Optional[PyObjectId] na wymagane id
+    id: PyObjectId;
     title: string;
     user_id: PyObjectId;
-    desc: string;
+    description: string;
 }

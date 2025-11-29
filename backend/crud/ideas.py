@@ -106,3 +106,51 @@ async def delete_idea(idea_id: str) -> bool:
 
     result = await ideas_collection.delete_one({"_id": ObjectId(idea_id)})
     return result.deleted_count == 1
+
+async def like_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
+    """Dodaj lajka (user_id) do idei. Zwraca pełny model po update."""
+    if not ObjectId.is_valid(idea_id):
+        return None
+
+    # Jeśli w Mongo trzymasz user_id jako stringi – zostaw tak jak jest.
+    # Jeśli jako ObjectId, to tu daj ObjectId(user_id)
+    result = await ideas_collection.update_one(
+        {"_id": ObjectId(idea_id)},
+        {"$addToSet": {"likedByUser": user_id}},  # brak duplikatów
+    )
+
+    if result.matched_count == 0:
+        return None
+
+    updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
+    if not updated:
+        return None
+
+    return IdeaFull.model_validate(updated)
+
+async def unlike_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
+    """Usuń lajka (user_id) z idei. Zwraca pełny model po update."""
+    if not ObjectId.is_valid(idea_id):
+        return None
+
+    result = await ideas_collection.update_one(
+        {"_id": ObjectId(idea_id)},
+        {"$pull": {"likedByUser": user_id}},
+    )
+
+    if result.matched_count == 0:
+        return None
+
+    updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
+    if not updated:
+        return None
+
+    return IdeaFull.model_validate(updated)
+async def get_ideas_liked_by_user(user_id: str) -> List[IdeaGet]:
+    """Pobierz wszystkie idee, które dany user polubił (mały model)."""
+    ideas: List[IdeaGet] = []
+
+    async for doc in ideas_collection.find({"likedByUser": user_id}):
+        ideas.append(IdeaGet.model_validate(doc))
+
+    return ideas

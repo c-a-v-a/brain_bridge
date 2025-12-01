@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-
+from pydantic import BaseModel
 from crud.ideas import (
     create_idea,
     get_idea,
@@ -9,12 +9,17 @@ from crud.ideas import (
     get_ideas_by_user_full,
     update_idea,
     delete_idea,
+    like_idea,             # <-- DODAJ
+    unlike_idea,           # <-- DODAJ
+    get_ideas_liked_by_user,  # <-- DODAJ jeśli zrobiłeś tę funkcję
 )
 
 from models.idea import IdeaCreate, IdeaGet, IdeaUpdate, IdeaFull
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
+class LikeRequest(BaseModel):
+    user_id: str
 
 @router.post("/", response_model=IdeaFull, status_code=status.HTTP_201_CREATED)
 async def create_idea_endpoint(idea: IdeaCreate):
@@ -93,3 +98,25 @@ async def delete_idea_endpoint(idea_id: str):
             detail="Idea not found",
         )
     return None
+@router.post("/{idea_id}/like", response_model=IdeaFull)
+async def like_idea_endpoint(idea_id: str, data: LikeRequest):
+    idea = await like_idea(idea_id, data.user_id)
+    if not idea:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Idea not found",
+        )
+    return idea
+@router.post("/{idea_id}/unlike", response_model=IdeaFull)
+async def unlike_idea_endpoint(idea_id: str, data: LikeRequest):
+    idea = await unlike_idea(idea_id, data.user_id)
+    if not idea:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Idea not found",
+        )
+    return idea
+@router.get("/liked/{user_id}", response_model=list[IdeaGet])
+async def list_ideas_liked_by_user(user_id: str):
+    """Lista idei polubionych przez użytkownika."""
+    return await get_ideas_liked_by_user(user_id)

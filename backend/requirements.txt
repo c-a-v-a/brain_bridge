@@ -6,4 +6,6 @@ pwdlib
 pydantic
 pyjwt
 tzdata
+pwdlib[argon2]
 uvicorn
+python-multipart

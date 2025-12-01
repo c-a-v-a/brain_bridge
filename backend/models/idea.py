@@ -18,6 +18,10 @@ class Idea(BaseModel):
     long_description: Optional[str] = None
     links: List[Link]
     wanted_contributors: str
+    liked_by_user: List[PyObjectId] = Field(
+        default_factory=list,
+        alias="likedByUser"
+    )
 
     class Config:
         populate_by_name = True
@@ -25,46 +29,38 @@ class Idea(BaseModel):
 
 
 class IdeaCreate(BaseModel):
-    """Model for creating a new idea.
-
-    This model includes only the fields required when a new idea
-    is submitted by a user.
-    """
+    """Model for creating a new idea."""
     title: str = Field(..., min_length=1, max_length=200)
     user_id: PyObjectId
     description: str = Field(..., min_length=1)
     long_description: Optional[str] = None
     links: List[Link]
     wanted_contributors: str
-
+    liked_by_user: List[PyObjectId] = Field(
+        default_factory=list,
+        alias="likedByUser"
+    )
 
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
 
-
-class IdeaGet(BaseModel):  
-    """Model returned in API responses.
-
-    This model hides internal MongoDB representation details
-    and exposes clean, client-side data. without long_description
-    """
+class IdeaGet(BaseModel):
+    """Model returned in API responses (bez long_description)."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     user_id: PyObjectId
     description: str
+    liked_by_user: List[PyObjectId] = Field(
+        default_factory=list,
+        alias="likedByUser"
+    )
 
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
-
-
 class IdeaFull(BaseModel):
-    """Model returned in API responses.
-
-    This model hides internal MongoDB representation details
-    and exposes clean, client-side data. with long_description
-    """
+    """Model returned in API responses (z long_description)."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str
     user_id: PyObjectId
@@ -72,11 +68,14 @@ class IdeaFull(BaseModel):
     long_description: Optional[str] = None
     links: List[Link]
     wanted_contributors: str
+    liked_by_user: List[PyObjectId] = Field(
+        default_factory=list,
+        alias="likedByUser"
+    )
 
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
-
 
 class IdeaUpdate(BaseModel):
     """Model for updating an idea.
@@ -87,8 +86,12 @@ class IdeaUpdate(BaseModel):
     user_id: Optional[PyObjectId] = None
     description: Optional[str] = None
     long_description: Optional[str] = None
-    links: List[Link]
-    wanted_contributors: str
+    links: Optional[List[Link]] = None
+    wanted_contributors: Optional[str] = None
+    liked_by_user: Optional[List[PyObjectId]] = Field(
+        default=None,
+        alias="likedByUser"
+    )
 
     class Config:
         populate_by_name = True

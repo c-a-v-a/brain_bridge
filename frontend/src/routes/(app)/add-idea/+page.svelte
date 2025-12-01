@@ -67,25 +67,10 @@
 		style="background-image: url('{backgroundImage}')"
 	></div>
 
-	<!-- NAVBAR -->
-	<nav
-		class="fixed left-0 right-0 top-0 z-20 flex
-				h-[60px] items-center justify-end border-b
-                border-white/10 bg-white/5 px-4 backdrop-blur-sm"
-	>
-		<!-- Placeholder for navbar items if any -->
-	</nav>
-
-	<!-- Sidebar -->
-	<aside
-		class="fixed bottom-0 left-0 top-0 z-10 w-20
-				  border-r border-white/10 bg-white/5 backdrop-blur-sm"
-	></aside>
-
 	<!-- Main Content -->
-	<main
+	<div
 		class="relative z-10 flex min-h-screen w-full items-center justify-center
-				 pb-10 pl-20 pt-[60px]"
+				 pb-10"
 	>
 		<form
 			on:submit|preventDefault={handleSubmit}
@@ -219,5 +204,5 @@
 				</button>
 			</div>
 		</form>
-	</main>
+	</div>
 </div>

@@ -17,10 +17,10 @@
 	function pickRandomIdea() {
 		if (ideas.length > 0) {
 			[currentIdea] = ideas.slice(-1);
-			
-			ideas = ideas.filter((x,i) => i !== ideas.length - 1);
 
-			ideasStore.update(xs => [...xs, currentIdea as IdeaGet]);
+			ideas = ideas.filter((x, i) => i !== ideas.length - 1);
+
+			ideasStore.update((xs) => [...xs, currentIdea as IdeaGet]);
 		} else {
 			currentIdea = null;
 		}
@@ -28,11 +28,10 @@
 
 	function filterOutExisting(arr: IdeaGet[]): IdeaGet[] {
 		let existing: IdeaGet[];
-		ideasStore.subscribe(v => existing = v)();
+		ideasStore.subscribe((v) => (existing = v))();
 
-		return arr.filter(x => !existing.some(e => e.id === x.id));
+		return arr.filter((x) => !existing.some((e) => e.id === x.id));
 	}
-
 
 	// Loading all ideas from API
 	async function loadIdeas() {
@@ -86,8 +85,7 @@
 	}
 </script>
 
-<div class="relative h-screen w-screen overflow-hidden">
-	<!-- Background image (unchanged) -->
+<div class="relative min-h-screen w-full overflow-hidden">
 	<div
 		class="absolute inset-[-10px] z-0 scale-110
             bg-cover bg-fixed bg-center
@@ -95,33 +93,8 @@
 		style="background-image: url('{backgroundImage}')"
 	></div>
 
-	<!-- NAVBAR (unchanged) -->
-	<nav
-		class="fixed left-0 right-0 top-0 z-20 flex
-				h-[60px] items-center justify-end border-b
-                border-white/10 bg-white/5 px-4 backdrop-blur-sm"
-	>
-		<a
-			href="/add-idea"
-			class="flex h-8 w-8 items-center justify-center rounded-full
-                   bg-cyan-800 text-lg font-bold text-white
-                   shadow-lg transition-transform hover:scale-110"
-		>
-			+
-		</a>
-	</nav>
-
-	<!-- Sidebar (unchanged) -->
-	<aside
-		class="fixed bottom-0 left-0 top-0 z-10 w-20
-				  border-r border-white/10 bg-white/5 backdrop-blur-sm"
-	></aside>
-
 	<!-- Main content container and Modal (Centering) -->
-	<main
-		class="relative z-10 flex h-screen w-screen items-center justify-center
-				 pl-20 pt-[60px]"
-	>
+	<div class="relative z-10 flex min-h-screen w-full items-center justify-center">
 		<!-- === MAIN VIEW ("Tinder" Card) === -->
 
 		<!-- Container for displaying ideas (centered) -->
@@ -174,7 +147,16 @@
                                        text-4xl font-bold leading-none text-fuchsia-600
                                        shadow-xl transition-all hover:scale-110 hover:bg-fuchsia-600 hover:text-white"
 						>
-							×
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke-width="2.5"
+								stroke="currentColor"
+								class="h-10 w-10"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+							</svg>
 						</button>
 
 						<!-- Like (✓) - Violet (Submit) -->
@@ -186,7 +168,16 @@
                                        text-4xl font-bold leading-none text-white
                                        shadow-xl transition-all hover:scale-110 hover:bg-white/80 hover:text-violet-900"
 						>
-							✓
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke-width="2.5"
+								stroke="currentColor"
+								class="h-10 w-10"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+							</svg>
 						</button>
 					</div>
 				</div>
@@ -197,5 +188,5 @@
 				</p>
 			{/if}
 		</div>
-	</main>
+	</div>
 </div>

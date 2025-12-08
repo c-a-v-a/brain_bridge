@@ -49,20 +49,24 @@ async def get_idea(idea_id: str) -> Optional[IdeaFull]:
 
     return IdeaFull.model_validate(idea)
 
-
-async def get_all_ideas() -> List[IdeaGet]:
+async def get_all_ideas() -> list[IdeaGet]:
     """Get all ideas from the database.
     
     Returns:
         List[IdeaGet]: All the ideas from the database.
     """
-    ideas: List[IdeaGet] = []
+    ideas: list[IdeaGet] = []
+    cursor = ideas_collection.find({})
+    async for doc in cursor:
+        # zamiana ObjectId na string
+        doc["_id"] = str(doc["_id"])
 
-    async for doc in ideas_collection.find():
+        if "description" not in doc and "desc" in doc:
+            doc["description"] = doc["desc"]
+
         ideas.append(IdeaGet.model_validate(doc))
-
+        
     return ideas
-
 
 async def get_all_ideas_full() -> List[IdeaFull]:
     """Get all ideas from the database.

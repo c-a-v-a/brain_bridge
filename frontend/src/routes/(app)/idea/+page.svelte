@@ -6,11 +6,36 @@
 	import { page } from '$app/state';
 	import { refresh } from '$lib/api/tokenApi';
 	import { goto } from '$app/navigation';
+	import Modal from '$lib/components/Modal.svelte';
 
 	const ideaId = page.url.searchParams.get('id');
 	let idea: IdeaFull | null;
 	let errorMessage: string | null;
 	let loading: boolean = true;
+
+	let showModal = false;
+	let currentImageIndex = 0;
+
+	function openModal(index: number) {
+		currentImageIndex = index;
+		showModal = true;
+	}
+
+	function closeModal() {
+		showModal = false;
+	}
+
+	function nextImage() {
+		if (idea && idea.images) {
+			currentImageIndex = (currentImageIndex + 1) % idea.images.length;
+		}
+	}
+
+	function prevImage() {
+		if (idea && idea.images) {
+			currentImageIndex = (currentImageIndex - 1 + idea.images.length) % idea.images.length;
+		}
+	}
 
 	onMount(async () => {
 		loading = true;
@@ -103,10 +128,23 @@
           bg-violet-500/40 p-4 shadow-inner shadow-black/50"
 					>
 						<label class="mb-2 block text-sm text-white/70"> Images: </label>
-						<div class="flex grow flex-col overflow-y-auto text-base leading-relaxed">
-							{#each idea.images as image}
-								<a class="text-blue-300 underline" href={`http://localhost:8000/api/${image}`}>Image</a>
-							{/each}
+						<div class="flex flex-wrap gap-4 overflow-y-auto p-2">
+							{#if idea.images && idea.images.length > 0}
+								{#each idea.images as image, index}
+									<button
+										class="relative h-24 w-24 overflow-hidden rounded-lg border border-white/20 shadow-md transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400"
+										on:click={() => openModal(index)}
+									>
+										<img
+											src={`http://localhost:8000/api/${image}`}
+											alt={`Idea image ${index + 1}`}
+											class="h-full w-full object-cover"
+										/>
+									</button>
+								{/each}
+							{:else}
+								<p class="text-white/50">No images available.</p>
+							{/if}
 						</div>
 					</div>
 
@@ -140,3 +178,57 @@
 		</div>
 	</div>
 </div>
+
+<Modal show={showModal} on:close={closeModal}>
+	{#if idea && idea.images && idea.images.length > 0}
+		<div
+			class="flex items-center justify-center gap-4 p-4 outline-none"
+			role="dialog"
+			tabindex="-1"
+		>
+			{#if idea.images.length > 1}
+				<!-- svelte-ignore a11y_consider_explicit_label -->
+				<button
+					class="shrink-0 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+					on:click|stopPropagation={prevImage}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+						stroke="currentColor"
+						class="h-4 w-4"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+					</svg>
+				</button>
+			{/if}
+
+			<img
+				src={`http://localhost:8000/api/${idea.images[currentImageIndex]}`}
+				alt={`Full size ${currentImageIndex + 1}`}
+				class="max-h-[85vh] max-w-[70vw] rounded-lg object-contain shadow-2xl"
+			/>
+
+			{#if idea.images.length > 1}
+				<!-- svelte-ignore a11y_consider_explicit_label -->
+				<button
+					class="shrink-0 rounded-full bg-white/10 p-3 text-white transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+					on:click|stopPropagation={nextImage}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+						stroke="currentColor"
+						class="h-4 w-4"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+					</svg>
+				</button>
+			{/if}
+		</div>
+	{/if}
+</Modal>

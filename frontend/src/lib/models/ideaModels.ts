@@ -6,14 +6,6 @@ export interface Link {
 }
 
 /**
- * @description Model dla danych do utworzenia nowego pomysłu.
- */
-export interface Link {
-    url: string;
-    text: string;
-}
-
-/**
  * @description Model for creating a new idea.
  */
 export interface IdeaCreate {
@@ -40,4 +32,5 @@ export interface IdeaFull {
     long_description?: string;
     links: Link[];
     wanted_contributors: string;
+    images: string[];
 }

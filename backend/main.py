@@ -2,19 +2,18 @@
 
 import uvicorn
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, HTTPException 
-from fastapi.staticfiles import StaticFiles 
-from uuid import uuid4 
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.staticfiles import StaticFiles
+from uuid import uuid4
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
-from crud.mongodb_connector import MongoDBConnector
-from routers.auth import router as auth_router
-
+from crud.ideas import get_idea, update_idea
 from crud.mongodb_connector import MongoDBConnector
 from routers.auth import router as auth_router
 from routers.chat import router as chat_router
 from routers.ideas import router as ideas_router
+from typing import List
 
 app = FastAPI()
 UPLOAD_DIR = "uploads"
@@ -31,29 +30,51 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-@app.post("/api/upload-image")
-async def upload_image(file: UploadFile = File(...)):
-   
-    allowed_ext = {"jpg", "jpeg", "png", "gif", "webp"}
-    ext = file.filename.split(".")[-1].lower()
-
-    if ext not in allowed_ext:
-        raise HTTPException(status_code=400, detail="Niepoprawny format pliku")
 
 
-    unique_name = f"{uuid4()}.{ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_name)
+IMAGE_MIME_TYPES = {
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/webp",
+    "image/gif",
+    "image/bmp"
+}
 
-  
-    with open(file_path, "wb") as buffer:
-        buffer.write(await file.read())
 
-  
+@app.post("/api/upload-images/{idea_id}")
+async def upload_image(idea_id: str, images: List[UploadFile] = File(...)):
+    idea = await get_idea(idea_id)
+
+    if not idea:
+        raise HTTPException(404, "Idea not found")
+
+    saved_paths = []
+
+    for image in images:
+        if image.content_type not in IMAGE_MIME_TYPES:
+            raise HTTPException(400, "File is not an image")
+
+        ext = image.filename.split(".")[-1].lower()
+
+        unique_name = f"{uuid4()}.{ext}"
+        file_path = os.path.join(UPLOAD_DIR, unique_name)
+
+        with open(file_path, "wb") as buffer:
+            buffer.write(await image.read())
+
+        saved_paths.append(file_path)
+
+    idea.images = saved_paths
+
+    await update_idea(idea_id, idea)
+
     return {
-        "filename": unique_name,
-        "url": f"/uploads/{unique_name}",
+        "ok": True,
     }
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+
+app.mount("/api/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")

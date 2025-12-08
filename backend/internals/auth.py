@@ -153,7 +153,7 @@ async def get_current_user_ws(websocket: WebSocket) -> UserGet:
         raise HTTPException(status_code=401, detail="Missing token")
 
     token = parts[1]
-    
+
     if not token:
         raise HTTPException(status_code=401, detail="Missing token")
 

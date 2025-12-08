@@ -1,3 +1,5 @@
+"""Module that provides the CRUD functionality for 'ideas' collection."""
+
 from bson import ObjectId
 from typing import List, Optional
 
@@ -11,8 +13,15 @@ ideas_collection = db["ideas"]
 
 
 async def create_idea(idea: IdeaCreate) -> IdeaFull:
-    """Utwórz nową ideę i zwróć pełny model (IdeaFull)."""
+    """Saves the new idea to the database.
     
+    Args:
+        idea (IdeaCreate): The idea that should be added to the database.
+
+    Returns:
+        IdeaFull: The newly added idea.
+    """
+
     doc = idea.model_dump(by_alias=True, exclude_none=True)
 
     result = await ideas_collection.insert_one(doc)
@@ -22,7 +31,15 @@ async def create_idea(idea: IdeaCreate) -> IdeaFull:
 
 
 async def get_idea(idea_id: str) -> Optional[IdeaFull]:
-    """Pobierz jedną ideę po ID (pełny model)."""
+    """Get one idea with given id.
+    
+    Args:
+        idea_id (str): The id of idea that will be returned.
+
+    Returns:
+        IdeaFull: The idea that was found in the database.
+        None: If no ideas were found.
+    """
     if not ObjectId.is_valid(idea_id):
         return None
 
@@ -34,7 +51,11 @@ async def get_idea(idea_id: str) -> Optional[IdeaFull]:
 
 
 async def get_all_ideas() -> List[IdeaGet]:
-    """Pobierz wszystkie idee (mały model, bez long_description)."""
+    """Get all ideas from the database.
+    
+    Returns:
+        List[IdeaGet]: All the ideas from the database.
+    """
     ideas: List[IdeaGet] = []
 
     async for doc in ideas_collection.find():
@@ -44,7 +65,11 @@ async def get_all_ideas() -> List[IdeaGet]:
 
 
 async def get_all_ideas_full() -> List[IdeaFull]:
-    """Pobierz wszystkie idee (pełny model, z long_description)."""
+    """Get all ideas from the database.
+    
+    Returns:
+        List[IdeaFull]: All the ideas from the database.
+    """
     ideas: List[IdeaFull] = []
 
     async for doc in ideas_collection.find():
@@ -54,7 +79,14 @@ async def get_all_ideas_full() -> List[IdeaFull]:
 
 
 async def get_ideas_by_user(user_id: str) -> List[IdeaGet]:
-    """Pobierz wszystkie idee użytkownika (mały model)."""
+    """Get all ideas created by a given user.
+    
+    Args:
+        user_id (str): Id of the user that created the ideas.
+
+    Returns:
+        List[IdeaGet]: All ideas that belong to the user.
+    """
     ideas: List[IdeaGet] = []
 
     async for doc in ideas_collection.find({"user_id": user_id}):
@@ -64,7 +96,14 @@ async def get_ideas_by_user(user_id: str) -> List[IdeaGet]:
 
 
 async def get_ideas_by_user_full(user_id: str) -> List[IdeaFull]:
-    """Pobierz wszystkie idee użytkownika (pełny model)."""
+    """Get all ideas created by a given user.
+    
+    Args:
+        user_id (str): Id of the user that created the ideas.
+
+    Returns:
+        List[IdeaFull]: All ideas that belong to the user.
+    """
     ideas: List[IdeaFull] = []
 
     async for doc in ideas_collection.find({"user_id": user_id}):
@@ -74,14 +113,27 @@ async def get_ideas_by_user_full(user_id: str) -> List[IdeaFull]:
 
 
 async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
-    """Zaktualizuj ideę i zwróć pełny model (IdeaFull)."""
+    """Update idea with given id.
+    
+    Args:
+        idea_id (str): The id of the idea that needs to be updated.
+        idea (IdeaUpdate): The model with fields that will be updated.
+
+    Returns:
+        IdeaFull: The idea that was updated, with updated fields.
+        None: If the idea wasn't updated.
+    """
     if not ObjectId.is_valid(idea_id):
         return None
 
-    data = idea.model_dump(by_alias=True, exclude_unset=True, exclude_none=True)
+    data = idea.model_dump(
+        by_alias=True,
+        exclude_unset=True,
+        exclude_none=True,
+        exclude={"id"}
+    )
 
     if not data:
-    
         return None
 
     result = await ideas_collection.update_one(
@@ -93,6 +145,7 @@ async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
         return None
 
     updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
+
     if not updated:
         return None
 
@@ -100,36 +153,62 @@ async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
 
 
 async def delete_idea(idea_id: str) -> bool:
-    """Usuń ideę po ID. Zwraca True, jeśli coś usunięto."""
+    """Deletes the idea with given id.
+    
+    Args:
+        idea_id (str): The id of the idea that will be deleted.
+
+    Returns:
+        bool: True if the idea was deleted. False otherwise.
+    """
     if not ObjectId.is_valid(idea_id):
         return False
 
     result = await ideas_collection.delete_one({"_id": ObjectId(idea_id)})
     return result.deleted_count == 1
 
+
 async def like_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
-    """Dodaj lajka (user_id) do idei. Zwraca pełny model po update."""
+    """Add the user with given id, to the likedByUser field.
+    
+    Args:
+        idea_id (str): The id of the idea.
+        user_id (str): The id of the user that likes the idea.
+
+    Returns:
+        IdeaFull: The idea that was liked by the user.
+        None: If the idea was not found.
+    """
     if not ObjectId.is_valid(idea_id):
         return None
 
-    # Jeśli w Mongo trzymasz user_id jako stringi – zostaw tak jak jest.
-    # Jeśli jako ObjectId, to tu daj ObjectId(user_id)
     result = await ideas_collection.update_one(
         {"_id": ObjectId(idea_id)},
-        {"$addToSet": {"likedByUser": user_id}},  # brak duplikatów
+        {"$addToSet": {"likedByUser": user_id}},
     )
 
     if result.matched_count == 0:
         return None
 
     updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
+
     if not updated:
         return None
 
     return IdeaFull.model_validate(updated)
 
+
 async def unlike_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
-    """Usuń lajka (user_id) z idei. Zwraca pełny model po update."""
+    """Remove the user with given id, to the likedByUser field.
+    
+    Args:
+        idea_id (str): The id of the idea.
+        user_id (str): The id of the user that disliked the idea.
+
+    Returns:
+        IdeaFull: The idea that was disliked by the user.
+        None: If the idea was not found.
+    """
     if not ObjectId.is_valid(idea_id):
         return None
 
@@ -146,8 +225,17 @@ async def unlike_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
         return None
 
     return IdeaFull.model_validate(updated)
+
+
 async def get_ideas_liked_by_user(user_id: str) -> List[IdeaGet]:
-    """Pobierz wszystkie idee, które dany user polubił (mały model)."""
+    """Get all ideas the were liked by the user with given id.
+    
+    Args:
+        user_id (str): Id of the user.
+
+    Returns:
+        List[IdeaGet]: All the ideas liked by user.
+    """
     ideas: List[IdeaGet] = []
 
     async for doc in ideas_collection.find({"likedByUser": user_id}):

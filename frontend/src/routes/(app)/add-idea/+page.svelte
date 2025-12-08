@@ -26,6 +26,16 @@
 		links = links.filter((_, i) => i !== index);
 	}
 
+	let files: File[] = [];
+
+  function handleFileChange(event: Event) {
+		const target = event.target as HTMLInputElement;
+
+		if (target.files) {
+			files = Array.from(target.files);
+		}
+  }
+
 	async function handleSubmit() {
 		if (!title.trim() || !shortDescription.trim()) {
 			alert('Title and short description cannot be empty.');
@@ -49,8 +59,35 @@
 			alert(`An error occurred: ${result.message}`);
 		} else {
 			console.log('Idea successfully sent:', result);
+
+			uploadImages(result._id);
+
 			goto('/');
 		}
+	}
+
+	async function uploadImages(ideaId: string) {
+		console.log(ideaId);
+		try {
+			const formData = new FormData();
+
+			files.forEach((file: File) => formData.append("images", file));
+
+			const response = await fetch(`http://localhost:8000/api/upload-images/${ideaId}`, {
+					method: 'POST',
+					body: formData
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				const error: Error = new Error(`Błąd serwera (${response.status}): ${errorText}`);
+				alert(`An error occurred: ${error.message}`);
+			}
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : "Nie można połączyć się z API.";
+        const error = new Error(`Błąd połączenia: ${errorMessage}`);
+				alert(`An error occurred: ${error.message}`);
+    }
 	}
 
 	function handleCancel() {
@@ -179,6 +216,15 @@
                         bg-white/15 p-3 text-white placeholder-white/70 outline-none
                         focus:border-white/50"
 				></textarea>
+			</div>
+
+			<div class="flex flex-col gap-2">
+				<input 
+				type="file"
+				multiple
+				accept="image/*"
+				on:change={handleFileChange}
+				/>
 			</div>
 
 			<!-- Buttons -->

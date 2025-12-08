@@ -27,6 +27,7 @@
                 pydantic
                 pyjwt
                 pymongo
+                python-multipart
                 tzdata
                 uvicorn
                 uvloop

@@ -1,3 +1,5 @@
+"""Module defining Pydantic models for Ideas objects."""
+
 from pydantic import BaseModel, Field, BeforeValidator
 from typing import Annotated, Optional, List
 
@@ -18,6 +20,7 @@ class Idea(BaseModel):
     long_description: Optional[str] = None
     links: List[Link]
     wanted_contributors: str
+    images: Optional[List[str]] = Field(default_factory=list)
     liked_by_user: List[PyObjectId] = Field(
         default_factory=list,
         alias="likedByUser"
@@ -59,6 +62,8 @@ class IdeaGet(BaseModel):
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
+
+
 class IdeaFull(BaseModel):
     """Model returned in API responses (z long_description)."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
@@ -68,6 +73,7 @@ class IdeaFull(BaseModel):
     long_description: Optional[str] = None
     links: List[Link]
     wanted_contributors: str
+    images: Optional[List[str]] = Field(default_factory=list)
     liked_by_user: List[PyObjectId] = Field(
         default_factory=list,
         alias="likedByUser"
@@ -76,6 +82,7 @@ class IdeaFull(BaseModel):
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
+
 
 class IdeaUpdate(BaseModel):
     """Model for updating an idea.
@@ -88,6 +95,7 @@ class IdeaUpdate(BaseModel):
     long_description: Optional[str] = None
     links: Optional[List[Link]] = None
     wanted_contributors: Optional[str] = None
+    images: Optional[List[str]] = None
     liked_by_user: Optional[List[PyObjectId]] = Field(
         default=None,
         alias="likedByUser"

@@ -15,7 +15,7 @@ from crud.mongodb_connector import MongoDBConnector
 from routers.auth import router as auth_router
 from routers.chat import router as chat_router
 from routers.ideas import router as ideas_router
-
+from routers.comments import router as comments_router
 app = FastAPI()
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -58,7 +58,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(ideas_router, prefix="/api")
-
+app.include_router(comments_router, prefix="/api")
 
 @asynccontextmanager
 async def lifespan():

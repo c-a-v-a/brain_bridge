@@ -3,7 +3,8 @@
 import jwt
 from datetime import timedelta, datetime, timezone
 from fastapi import Depends, HTTPException, WebSocket
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
 from pwdlib import PasswordHash
 from typing import Optional
 
@@ -11,7 +12,8 @@ from crud.user import get_user_by_email
 from models.user import UserGet, UserLogin, User
 from settings import Settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+auth_scheme = HTTPBearer()
+
 PASSWORD_HASH = PasswordHash.recommended()
 settings = Settings()
 
@@ -99,31 +101,24 @@ async def authenticate_user(user: UserLogin) -> Optional[User]:
 
     return auth_user
 
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),
+) -> UserGet:
+    """Retrieve the current authenticated user from a JWT token."""
+    token = credentials.credentials  # <- tu bierzemy sam token z nagłówka
 
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserGet:
-    """Retrieve the current authenticated user from a JWT token.
-
-    Args:
-        token (str): Bearer token from the request.
-
-    Raises:
-        HTTPException: If the token is invalid or user not found.
-
-    Returns:
-        UserGet: Authenticated user.
-    """
     if len(token) < 1:
-        raise HTTPException(401," Missing token")
+        raise HTTPException(401, "Missing token")
 
     data = decode_token(token)
 
     if not data or data.get("type") != "access":
-        raise HTTPException(401," Invalid token")
+        raise HTTPException(401, "Invalid token")
 
     email = data.get("sub")
 
     if not email:
-        raise HTTPException(401," Invalid token")
+        raise HTTPException(401, "Invalid token")
 
     user = await get_user_by_email(email)
 

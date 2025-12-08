@@ -32,16 +32,19 @@ async def get_idea(idea_id: str) -> Optional[IdeaFull]:
 
     return IdeaFull.model_validate(idea)
 
+async def get_all_ideas() -> list[IdeaGet]:
+    ideas: list[IdeaGet] = []
+    cursor = ideas_collection.find({})
+    async for doc in cursor:
+        # zamiana ObjectId na string
+        doc["_id"] = str(doc["_id"])
 
-async def get_all_ideas() -> List[IdeaGet]:
-    """Pobierz wszystkie idee (mały model, bez long_description)."""
-    ideas: List[IdeaGet] = []
+      
+        if "description" not in doc and "desc" in doc:
+            doc["description"] = doc["desc"]
 
-    async for doc in ideas_collection.find():
         ideas.append(IdeaGet.model_validate(doc))
-
     return ideas
-
 
 async def get_all_ideas_full() -> List[IdeaFull]:
     """Pobierz wszystkie idee (pełny model, z long_description)."""

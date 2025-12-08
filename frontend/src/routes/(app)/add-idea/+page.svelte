@@ -28,13 +28,24 @@
 
 	let files: File[] = [];
 
-  function handleFileChange(event: Event) {
+	const MAX_TOTAL_SIZE = 10 * 1024 * 1024; // 10MB
+
+	function handleFileChange(event: Event) {
 		const target = event.target as HTMLInputElement;
 
 		if (target.files) {
-			files = Array.from(target.files);
+			const selectedFiles = Array.from(target.files);
+			const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+
+			if (totalSize > MAX_TOTAL_SIZE) {
+				alert('Total size of images cannot exceed 10MB.');
+				target.value = ''; // Clear the input
+				files = [];
+			} else {
+				files = selectedFiles;
+			}
 		}
-  }
+	}
 
 	async function handleSubmit() {
 		if (!title.trim() || !shortDescription.trim()) {
@@ -71,11 +82,11 @@
 		try {
 			const formData = new FormData();
 
-			files.forEach((file: File) => formData.append("images", file));
+			files.forEach((file: File) => formData.append('images', file));
 
 			const response = await fetch(`http://localhost:8000/api/upload-images/${ideaId}`, {
-					method: 'POST',
-					body: formData
+				method: 'POST',
+				body: formData
 			});
 
 			if (!response.ok) {
@@ -83,11 +94,11 @@
 				const error: Error = new Error(`Błąd serwera (${response.status}): ${errorText}`);
 				alert(`An error occurred: ${error.message}`);
 			}
-    } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : "Nie można połączyć się z API.";
-        const error = new Error(`Błąd połączenia: ${errorMessage}`);
-				alert(`An error occurred: ${error.message}`);
-    }
+		} catch (e) {
+			const errorMessage = e instanceof Error ? e.message : 'Nie można połączyć się z API.';
+			const error = new Error(`Błąd połączenia: ${errorMessage}`);
+			alert(`An error occurred: ${error.message}`);
+		}
 	}
 
 	function handleCancel() {
@@ -219,12 +230,7 @@
 			</div>
 
 			<div class="flex flex-col gap-2">
-				<input 
-				type="file"
-				multiple
-				accept="image/*"
-				on:change={handleFileChange}
-				/>
+				<input type="file" multiple accept="image/*" on:change={handleFileChange} />
 			</div>
 
 			<!-- Buttons -->

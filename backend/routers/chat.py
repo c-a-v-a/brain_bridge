@@ -7,7 +7,7 @@ This module defines an authenticaded WebSocket endpoint that:
 - Cleans up disconnected users.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from internals.auth import get_current_user_ws
 from internals.chat import connect_user, disconnect_user, broadcast

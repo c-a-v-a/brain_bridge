@@ -8,19 +8,7 @@
 	import { goto } from '$app/navigation';
 
 	const ideaId = page.url.searchParams.get('id');
-	let idea: IdeaFull | null = {
-		id: '1',
-		title: 'Tytuł',
-		description: 'opis opis opis',
-		long_description:
-			'bardzo długi opisggggg ggggggggggg ggggggggggggg gggg ggg gggggggggggg ggggggggggg ggggggggggggg  ggggggg gggggggg gggggggggg gggggggggggg gggg ggggggg ggggggggg gggggg ggggggg gggggg gggggg ggggggggg ggggggggggg gggggggggg ggggggggggggggggg gggggggg',
-		links: [
-			{ url: 'https://google.com', text: 'Google' },
-			{ url: 'https://duckduckgo.com', text: 'Drugi link' }
-		],
-		wanted_contributors: 'Jakich ludzi porzebujemy',
-		user_id: '1'
-	};
+	let idea: IdeaFull | null;
 	let errorMessage: string | null;
 	let loading: boolean = true;
 
@@ -45,6 +33,7 @@
 			idea = maybeIdea;
 		}
 		loading = false;
+		console.log(idea);
 	});
 </script>
 
@@ -105,6 +94,18 @@
 						<div class="flex grow flex-col overflow-y-auto text-base leading-relaxed">
 							{#each idea.links as link}
 								<a class="text-blue-300 underline" href={link.url}>{link.text}</a>
+							{/each}
+						</div>
+					</div>
+
+					<div
+						class="flex grow flex-col rounded-lg border border-white/10
+          bg-violet-500/40 p-4 shadow-inner shadow-black/50"
+					>
+						<label class="mb-2 block text-sm text-white/70"> Images: </label>
+						<div class="flex grow flex-col overflow-y-auto text-base leading-relaxed">
+							{#each idea.images as image}
+								<a class="text-blue-300 underline" href={`http://localhost:8000/api/${image}`}>Image</a>
 							{/each}
 						</div>
 					</div>

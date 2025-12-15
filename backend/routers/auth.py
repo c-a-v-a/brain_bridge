@@ -6,7 +6,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException
 
 from crud.user import create_user, get_user_by_email, get_user_by_username
-from internals.auth import authenticate_user, create_token, get_current_user, decode_token
+from internals.auth import authenticate_user, create_token, decode_token, get_current_user
 from models.user import User, UserGet, UserLogin
 from models.token import TokenPair
 from settings import Settings

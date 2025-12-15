@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import backgroundImage from '$lib/assets/dashboard-bg.png';
-	import { getIdeas } from '$lib/api/ideasApi';
-	import type { IdeaGet } from '$lib/models/ideaModels';
+	import { getIdeas } from '$lib/api/idea';
 	import { ideasStore } from '$lib/store/ideas';
+	import type { IdeaGet } from '$lib/models/idea';
 
 	// === STATE VARIABLES FOR IDEAS ===
 	let ideas: Array<IdeaGet> = []; // Full list of ideas
@@ -46,27 +46,6 @@
 			currentIdea = null;
 		} else {
 			ideas = result;
-			// To ensure you see something at the start, we add mock data
-			// You will remove this when the server returns data.
-			if (ideas.length === 0) {
-				ideas = [
-					{
-						id: 'mock1',
-						title: 'Spaceship Project',
-						user_id: 'dev_user',
-						description:
-							'Description of a super secret project to create an intergalactic merchant ship with warp drive.'
-					},
-					{
-						id: 'mock2',
-						title: 'SvelteKit CMS',
-						user_id: 'dev_user',
-						description:
-							'Lightweight and fast content management system built with SvelteKit and Tailwind CSS. Full API support.'
-					}
-				];
-			}
-
 			ideas = filterOutExisting(ideas);
 
 			pickRandomIdea();

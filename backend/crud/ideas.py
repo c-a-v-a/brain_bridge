@@ -4,119 +4,92 @@ from bson import ObjectId
 from typing import List, Optional
 
 from crud.mongodb_connector import MongoDBConnector
-from models.idea import IdeaCreate, IdeaGet, IdeaFull, IdeaUpdate
+from models.idea import Idea, IdeaCreate, IdeaFilter, IdeaGet, IdeaUpdate
 
 
 client = MongoDBConnector()
 db = client.get_db()
-ideas_collection = db["ideas"]
+ideas = db["ideas"]
 
 
-async def create_idea(idea: IdeaCreate) -> IdeaFull:
+# Create
+async def create_idea(idea: IdeaCreate) -> Idea:
     """Saves the new idea to the database.
     
     Args:
         idea (IdeaCreate): The idea that should be added to the database.
 
     Returns:
-        IdeaFull: The newly added idea.
+        Idea: The newly added idea.
     """
-
     doc = idea.model_dump(by_alias=True, exclude_none=True)
 
-    result = await ideas_collection.insert_one(doc)
-    created = await ideas_collection.find_one({"_id": result.inserted_id})
+    result = await ideas.insert_one(doc)
+    created = await ideas.find_one({"_id": result.inserted_id})
 
-    return IdeaFull.model_validate(created)
+    return Idea.model_validate(created)
 
 
-async def get_idea(idea_id: str) -> Optional[IdeaFull]:
+# Read
+async def get_idea(idea_id: str) -> Optional[Idea]:
     """Get one idea with given id.
     
     Args:
         idea_id (str): The id of idea that will be returned.
 
     Returns:
-        IdeaFull: The idea that was found in the database.
+        Idea: The idea that was found in the database.
         None: If no ideas were found.
     """
     if not ObjectId.is_valid(idea_id):
         return None
 
-    idea = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
+    idea = await ideas.find_one({"_id": ObjectId(idea_id)})
     if not idea:
         return None
 
-    return IdeaFull.model_validate(idea)
+    return Idea.model_validate(idea)
 
-async def get_all_ideas() -> list[IdeaGet]:
-    """Get all ideas from the database.
+
+async def get_ideas(filters: IdeaFilter) -> List[Idea]:
+    """Get ideas that match the filter.
     
+    Args:
+        filter (IdeaFilter): Filters that are used when searching for the idea.
+
     Returns:
-        List[IdeaGet]: All the ideas from the database.
+        List[Idea]: The ideas matching the filter.
     """
-    ideas: list[IdeaGet] = []
-    cursor = ideas_collection.find({})
+    query = filters.model_dump(exclude_none=True, by_alias=True)
+
+    if not query:
+        return None
+
+    cursor = ideas.find(query)
+    result = []
+
     async for doc in cursor:
-        # zamiana ObjectId na string
-        doc["_id"] = str(doc["_id"])
+        result.append(Idea.validate(doc))
 
-        if "description" not in doc and "desc" in doc:
-            doc["description"] = doc["desc"]
+    return result
 
-        ideas.append(IdeaGet.model_validate(doc))
-        
-    return ideas
 
-async def get_all_ideas_full() -> List[IdeaFull]:
+async def get_all_ideas() -> List[IdeaGet]:
     """Get all ideas from the database.
     
     Returns:
-        List[IdeaFull]: All the ideas from the database.
+        List[Idea]: All the ideas from the database.
     """
-    ideas: List[IdeaFull] = []
+    result = []
 
-    async for doc in ideas_collection.find():
-        ideas.append(IdeaFull.model_validate(doc))
+    async for doc in ideas.find():
+        result.append(IdeaGet.model_validate(doc))
 
-    return ideas
-
-
-async def get_ideas_by_user(user_id: str) -> List[IdeaGet]:
-    """Get all ideas created by a given user.
-    
-    Args:
-        user_id (str): Id of the user that created the ideas.
-
-    Returns:
-        List[IdeaGet]: All ideas that belong to the user.
-    """
-    ideas: List[IdeaGet] = []
-
-    async for doc in ideas_collection.find({"user_id": user_id}):
-        ideas.append(IdeaGet.model_validate(doc))
-
-    return ideas
+    return result
 
 
-async def get_ideas_by_user_full(user_id: str) -> List[IdeaFull]:
-    """Get all ideas created by a given user.
-    
-    Args:
-        user_id (str): Id of the user that created the ideas.
-
-    Returns:
-        List[IdeaFull]: All ideas that belong to the user.
-    """
-    ideas: List[IdeaFull] = []
-
-    async for doc in ideas_collection.find({"user_id": user_id}):
-        ideas.append(IdeaFull.model_validate(doc))
-
-    return ideas
-
-
-async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
+# Update
+async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[Idea]:
     """Update idea with given id.
     
     Args:
@@ -124,8 +97,8 @@ async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
         idea (IdeaUpdate): The model with fields that will be updated.
 
     Returns:
-        IdeaFull: The idea that was updated, with updated fields.
-        None: If the idea wasn't updated.
+        Optional[Idea]: The idea that was updated, with updated fields,
+        None otherwise.
     """
     if not ObjectId.is_valid(idea_id):
         return None
@@ -140,7 +113,7 @@ async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
     if not data:
         return None
 
-    result = await ideas_collection.update_one(
+    result = await ideas.update_one(
         {"_id": ObjectId(idea_id)},
         {"$set": data},
     )
@@ -148,14 +121,72 @@ async def update_idea(idea_id: str, idea: IdeaUpdate) -> Optional[IdeaFull]:
     if result.matched_count == 0:
         return None
 
-    updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
+    updated = await ideas.find_one({"_id": ObjectId(idea_id)})
 
     if not updated:
         return None
 
-    return IdeaFull.model_validate(updated)
+    return Idea.model_validate(updated)
 
 
+async def like_idea(idea_id: str, user_id: str) -> Optional[Idea]:
+    """Add the user with given id, to the likedByUser field.
+    
+    Args:
+        idea_id (str): The id of the idea.
+        user_id (str): The id of the user that likes the idea.
+
+    Returns:
+        Optional[Idea]: The idea that was liked by the user, None otherwise.
+    """
+    if not ObjectId.is_valid(idea_id):
+        return None
+
+    result = await ideas.update_one(
+        {"_id": ObjectId(idea_id)},
+        {"$addToSet": {"likedByUser": user_id}},
+    )
+
+    if result.matched_count == 0:
+        return None
+
+    updated = await ideas.find_one({"_id": ObjectId(idea_id)})
+
+    if not updated:
+        return None
+
+    return Idea.model_validate(updated)
+
+
+async def unlike_idea(idea_id: str, user_id: str) -> Optional[Idea]:
+    """Remove the user with given id, to the likedByUser field.
+    
+    Args:
+        idea_id (str): The id of the idea.
+        user_id (str): The id of the user that disliked the idea.
+
+    Returns:
+        Optional[Idea]: The idea that was disliked by the user, None otherwise.
+    """
+    if not ObjectId.is_valid(idea_id):
+        return None
+
+    result = await ideas.update_one(
+        {"_id": ObjectId(idea_id)},
+        {"$pull": {"likedByUser": user_id}},
+    )
+
+    if result.matched_count == 0:
+        return None
+
+    updated = await ideas.find_one({"_id": ObjectId(idea_id)})
+    if not updated:
+        return None
+
+    return Idea.model_validate(updated)
+
+
+# Delete
 async def delete_idea(idea_id: str) -> bool:
     """Deletes the idea with given id.
     
@@ -168,81 +199,5 @@ async def delete_idea(idea_id: str) -> bool:
     if not ObjectId.is_valid(idea_id):
         return False
 
-    result = await ideas_collection.delete_one({"_id": ObjectId(idea_id)})
+    result = await ideas.delete_one({"_id": ObjectId(idea_id)})
     return result.deleted_count == 1
-
-
-async def like_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
-    """Add the user with given id, to the likedByUser field.
-    
-    Args:
-        idea_id (str): The id of the idea.
-        user_id (str): The id of the user that likes the idea.
-
-    Returns:
-        IdeaFull: The idea that was liked by the user.
-        None: If the idea was not found.
-    """
-    if not ObjectId.is_valid(idea_id):
-        return None
-
-    result = await ideas_collection.update_one(
-        {"_id": ObjectId(idea_id)},
-        {"$addToSet": {"likedByUser": user_id}},
-    )
-
-    if result.matched_count == 0:
-        return None
-
-    updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
-
-    if not updated:
-        return None
-
-    return IdeaFull.model_validate(updated)
-
-
-async def unlike_idea(idea_id: str, user_id: str) -> Optional[IdeaFull]:
-    """Remove the user with given id, to the likedByUser field.
-    
-    Args:
-        idea_id (str): The id of the idea.
-        user_id (str): The id of the user that disliked the idea.
-
-    Returns:
-        IdeaFull: The idea that was disliked by the user.
-        None: If the idea was not found.
-    """
-    if not ObjectId.is_valid(idea_id):
-        return None
-
-    result = await ideas_collection.update_one(
-        {"_id": ObjectId(idea_id)},
-        {"$pull": {"likedByUser": user_id}},
-    )
-
-    if result.matched_count == 0:
-        return None
-
-    updated = await ideas_collection.find_one({"_id": ObjectId(idea_id)})
-    if not updated:
-        return None
-
-    return IdeaFull.model_validate(updated)
-
-
-async def get_ideas_liked_by_user(user_id: str) -> List[IdeaGet]:
-    """Get all ideas the were liked by the user with given id.
-    
-    Args:
-        user_id (str): Id of the user.
-
-    Returns:
-        List[IdeaGet]: All the ideas liked by user.
-    """
-    ideas: List[IdeaGet] = []
-
-    async for doc in ideas_collection.find({"likedByUser": user_id}):
-        ideas.append(IdeaGet.model_validate(doc))
-
-    return ideas

@@ -1,6 +1,6 @@
 """Module defining Pydantic models for User objects and authentication."""
 
-from pydantic import BaseModel, EmailStr, Field, BeforeValidator
+from pydantic import BaseModel, BeforeValidator, EmailStr, Field
 from typing import Annotated, Optional
 
 PyObjectId = Annotated[str, BeforeValidator(str)]
@@ -73,6 +73,21 @@ class UserLogin(BaseModel):
     """Model for user login credentials with email and password."""
     email: EmailStr = Field(..., min_length=5)
     password: str = Field(..., min_length=8)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+
+
+class UserFilter(BaseModel):
+    """Model for searchin users in the database."""
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    name: Optional[str] = None
+    surname: Optional[str] = None
+    is_admin: Optional[bool] = None
 
     class Config:
         populate_by_name = True

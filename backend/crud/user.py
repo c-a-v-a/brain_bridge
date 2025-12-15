@@ -4,13 +4,14 @@ from bson import ObjectId
 from typing import List, Optional
 
 from crud.mongodb_connector import MongoDBConnector
-from models.user import User, UserGet, UserCreate, UserUpdate
+from models.user import UserCreate, UserFilter, UserGet, UserUpdate
 
 client = MongoDBConnector()
 db = client.get_db()
 users = db["users"]
 
 
+# Create
 async def create_user(user: UserCreate) -> UserGet:
     """Create a new user and insert it into the collection.
 
@@ -33,6 +34,7 @@ async def create_user(user: UserCreate) -> UserGet:
     return UserGet.model_validate(new_user)
 
 
+# Read
 async def get_user(user_id: str) -> Optional[UserGet]:
     """Retrieve a user by their ID.
 
@@ -53,40 +55,28 @@ async def get_user(user_id: str) -> Optional[UserGet]:
     return None
 
 
-async def get_user_by_username(username: str) -> Optional[UserGet]:
-    """Retrieve a user by their username.
+async def get_users(filters: UserFilter) -> List[UserGet]:
+    """Retrieve the users that match the filter.
 
     Args:
-        username (str): The username to search for.
-
+        filter (UserFilter): Filters that are used when searching for the user.
+    
     Returns:
-        Optional[UserGet]: The user if found, otherwise None.
+        List[UserGet]: User that match the filter, None if no user was found.
     """
-    user = await users.find_one({"username": username})
+    query = filters.model_dump(exclude_none=True, by_alias=True)
 
-    if user:
-        return UserGet.model_validate(user)
+    if not query:
+        return None
 
-    return None
+    cursor = users.find(query)
+    result = []
 
+    async for doc in cursor:
+        result.append(UserGet.validate(doc))
 
-async def get_user_by_email(email: str) -> Optional[User]:
-    """Retrieve a user by their email.
+    return result
 
-    Typically used for authentication and token validation.
-
-    Args:
-        email (str): The email address to search for.
-
-    Returns:
-        Optional[UserGet]: The user if found, otherwise None.
-    """
-    user = await users.find_one({"email": email})
-
-    if user:
-        return User.model_validate(user)
-
-    return None
 
 
 async def get_all_users() -> List[UserGet]:
@@ -103,6 +93,7 @@ async def get_all_users() -> List[UserGet]:
     return all_users
 
 
+# Update
 async def update_user(user_id: str, user: UserUpdate) -> Optional[UserGet]:
     """Update a user by their ID.
 
@@ -135,6 +126,7 @@ async def update_user(user_id: str, user: UserUpdate) -> Optional[UserGet]:
     return None
 
 
+# Delete
 async def delete_user(user_id: str) -> bool:
     """Delete a user by their ID.
 

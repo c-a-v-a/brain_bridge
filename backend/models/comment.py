@@ -1,23 +1,32 @@
+"""Module defining Pydantic models for Comment objects."""
 
 from datetime import datetime
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, BeforeValidator, Field
+from typing import Annotated, List, Optional
+
+PyObjectId = Annotated[str, BeforeValidator(str)]
 
 
-class CommentBase(BaseModel):
-    idea_id: str = Field(..., description="ID powiązanego pomysłu")
-    content: str = Field(..., min_length=1, max_length=2000)
-
-
-class CommentCreate(CommentBase):
-    """Payload do tworzenia komentarza z requestu."""
-    pass
-
-
-class CommentInDB(CommentBase):
-    id: str = Field(alias="_id")
+class Comment(BaseModel):
+    """Base model for comment collection."""
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
     user_id: str
+    content: str
     created_at: datetime
+    replies: List[str] = []
 
     class Config:
-        populate_by_name = True  # pozwala zwracać `id` zamiast `_id`
+        populate_by_name = True
+
+
+class CommentUpdate(BaseModel):
+    """Model for updating comment."""
+    content: Optional[str] = None
+    replies: Optional[List[str]] = []
+
+    class Config:
+        populate_by_name = True
+
+
+class CommentFilter(CommentUpdate):
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)

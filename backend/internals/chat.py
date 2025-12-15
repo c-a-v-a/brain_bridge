@@ -15,7 +15,7 @@ import json
 from fastapi import WebSocket
 from typing import Dict
 
-# Map of username->WebSocket
+
 active_connections: Dict[str, WebSocket] = {}
 
 

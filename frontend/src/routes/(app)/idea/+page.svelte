@@ -9,9 +9,11 @@
 	import Modal from '$lib/components/Modal.svelte';
 
 	const ideaId = page.url.searchParams.get('id');
-	let idea: IdeaFull | null;
+	let idea: IdeaFull | null = null;
 	let errorMessage: string | null;
 	let loading: boolean = true;
+	let comment: string = "";
+	let comments: any[] = [];
 
 	let showModal = false;
 	let currentImageIndex = 0;
@@ -37,6 +39,30 @@
 		}
 	}
 
+	async function addComment() {
+			const response = await fetch(`http://localhost:8000/api/comments`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					content: comment,
+					idea_id: ideaId
+				})
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				const error: Error = new Error(`Błąd serwera (${response.status}): ${errorText}`);
+				alert(`An error occurred: ${error.message}`);
+			}
+
+			comment = "";
+
+			let res = await fetch(`http://localhost:8000/api/comments/${ideaId}`);
+			comments = await res.json();
+	}
+
 	onMount(async () => {
 		loading = true;
 
@@ -57,6 +83,10 @@
 		} else {
 			idea = maybeIdea;
 		}
+
+		let res = await fetch(`http://localhost:8000/api/comments/${ideaId}`);
+		comments = await res.json();
+
 		loading = false;
 		console.log(idea);
 	});
@@ -71,7 +101,7 @@
 		style="background-image: url('{backgroundImage}')"
 	></div>
 	<!-- Główny kontener na treść i Modal (Centrowanie) -->
-	<div class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center">
+	<div class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center mt-103421">
 		{#if idea}
 			<div
 				class="rounded-4xl min-w-1/3 mb-5 bg-violet-800/30 p-3 px-10 text-center text-lg
@@ -81,7 +111,7 @@
 			</div>
 		{/if}
 		<!-- Kontener na wyświetlanie pomysłów (wyśrodkowany) -->
-		<div class="flex w-full flex-col items-center justify-center">
+		<div class="flex w-full flex-col items-center justify-start">
 			{#if loading}
 				<p class="rounded-lg bg-black/50 p-8 text-xl text-white backdrop-blur-sm">
 					Ładowanie pomysłu...
@@ -171,6 +201,39 @@
               text-white"
 						>
 							<p class="whitespace-pre-wrap">{idea.wanted_contributors || 'Brak opisu.'}</p>
+						</div>
+					</div>
+					<div
+						class="flex grow flex-col rounded-lg border border-white/10
+          bg-violet-500/40 p-4 shadow-inner shadow-black/50"
+					>
+						<label class="mb-2 block text-sm text-white/70"> Comments: </label>
+						<div
+							class="grow overflow-y-auto text-base leading-relaxed
+              text-white"
+						>
+							
+						</div>
+						<div
+							class="grow overflow-y-auto text-base leading-relaxed text-white w-full flex flex-col justify-center"
+						>
+							{#each comments as com}
+								<p>User: {com.content}</p>
+							{/each}
+							<input
+								type="text"
+								placeholder="Comment"
+								bind:value={comment}
+								class="flex-2 mt-5 rounded-lg border border-white/30
+																	bg-white/15 p-2 text-white placeholder-white/70 outline-none
+																	focus:border-white/50"
+							/>
+							<button
+								on:click={addComment}
+								class="rounded-lg bg-violet-900 px-2 py-2 text-white transition-colors hover:bg-violet-700"
+							>
+								Add comment
+							</button>
 						</div>
 					</div>
 				</div>

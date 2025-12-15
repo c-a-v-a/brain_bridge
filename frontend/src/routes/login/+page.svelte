@@ -1,12 +1,10 @@
 <script lang="ts">
-	import { refresh, validate } from "$lib/api/tokenApi";
-	import { login } from "$lib/api/userApi";
-	import type { TokenPair } from "$lib/models/tokenModels";
-	import type { UserLogin } from "$lib/models/userModels";
-	import { tokens } from "$lib/store/tokens";
 	import { goto } from '$app/navigation';
-	import { get } from "svelte/store";
 	import { onMount } from "svelte";
+	import { refresh } from "$lib/api/token";
+	import { login } from "$lib/api/user";
+	import type { TokenPair } from "$lib/models/token";
+	import type { UserLogin } from "$lib/models/user";
 
 
 	let user: UserLogin = {
@@ -20,9 +18,7 @@
 		if (Error.isError(result)) {
 			console.log(result.message);
 		} else {
-			tokens.set(result);
 			console.log("Authenticated");
-			console.log(get(tokens));
 			await goto('/');
 		}
 	}

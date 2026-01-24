@@ -22,6 +22,7 @@ async def create_idea(idea: IdeaCreate) -> Idea:
     Returns:
         Idea: The newly added idea.
     """
+    print(idea.author)
     doc = idea.model_dump(by_alias=True, exclude_none=True)
 
     result = await ideas.insert_one(doc)
@@ -78,7 +79,7 @@ async def get_all_ideas() -> List[IdeaGet]:
     """Get all ideas from the database.
     
     Returns:
-        List[Idea]: All the ideas from the database.
+        List[IdeaGet]: All the ideas from the database.
     """
     result = []
 
@@ -86,6 +87,20 @@ async def get_all_ideas() -> List[IdeaGet]:
         result.append(IdeaGet.model_validate(doc))
 
     return result
+
+
+async def get_liked_ideas(user_id: str) -> List[IdeaGet]:
+    """Get all liked ideas from the database.
+
+    Args:
+        user_id (str): User that checks for his liked ideas.
+    
+    Returns:
+        List[Idea]: All the ideas from the database that user with given id liked.
+    """
+    ideas = await get_all_ideas()
+
+    return filter(lambda idea: user_id in idea.liked_by_user, ideas)
 
 
 # Update

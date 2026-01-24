@@ -5,9 +5,9 @@ and current user info.
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException
 
-from crud.user import create_user, get_user_by_email, get_user_by_username
+from crud.user import create_user, get_users, get_user
 from internals.auth import authenticate_user, create_token, decode_token, get_current_user
-from models.user import User, UserGet, UserLogin
+from models.user import User, UserGet, UserLogin, UserFilter
 from models.token import TokenPair
 from settings import Settings
 
@@ -30,9 +30,9 @@ async def register(user: User) -> UserGet:
     Returns:
         UserGet: Newly created user (without password).
     """
-    if await get_user_by_email(user.email) is not None:
+    if await len(get_users(UserFilter(email=user.email))) > 0:
         raise HTTPException(409, "Email already taken")
-    if await get_user_by_username(user.username) is not None:
+    if await len(get_users(UserFilter(username=user.username))) > 0:
         raise HTTPException(409, "Username already taken")
 
     new_user = await create_user(user)
@@ -92,10 +92,12 @@ async def refresh(tokens: TokenPair) -> TokenPair:
         raise HTTPException(401, "Invalid refresh token")
 
     email = data.get("sub")
-    user = await get_user_by_email(email)
+    users = await get_users(UserFilter(email=email))
 
-    if not user:
+    if not users or len(users) == 0:
         raise HTTPException(401, "User does not exist")
+
+    user = users[0]
 
     return TokenPair(
         access_token = create_token(

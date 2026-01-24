@@ -1,20 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import backgroundImage from '$lib/assets/dashboard-bg.png';
-	import { createIdea, getFullIdea, getIdeas } from '$lib/api/ideasApi';
-	import type { IdeaCreate, IdeaFull, IdeaGet } from '$lib/models/ideaModels';
+	import { createIdea, getIdea, getIdeas } from '$lib/api/idea';
+	import type { IdeaCreate, Idea, IdeaGet } from '$lib/models/idea';
+	import { createComment, getComments } from '$lib/api/comment'
+	import type { Comment } from '$lib/models/comment';
 	import { page } from '$app/state';
-	import { refresh, getTokens } from '$lib/api/tokenApi';
+	import { refresh, getTokens } from '$lib/api/token';
 	import { goto } from '$app/navigation';
 	import Modal from '$lib/components/Modal.svelte';
-	import { tokens } from '$lib/store/tokens';
 
 	const ideaId = page.url.searchParams.get('id');
-	let idea: IdeaFull | null = null;
+	let idea: Idea | null = null;
 	let errorMessage: string | null;
 	let loading: boolean = true;
 	let comment: string = "";
-	let comments: any[] = [];
+	let comments: Comment[] = [];
+	let newComment = '';
+	let replyContent: Record<number, string> = {};
 
 	let showModal = false;
 	let currentImageIndex = 0;
@@ -40,30 +43,6 @@
 		}
 	}
 
-	async function addComment() {
-			const response = await fetch(`http://localhost:8000/api/comments`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					content: comment,
-					idea_id: ideaId
-				})
-			});
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				const error: Error = new Error(`Błąd serwera (${response.status}): ${errorText}`);
-				alert(`An error occurred: ${error.message}`);
-			}
-
-			comment = "";
-
-			let res = await fetch(`http://localhost:8000/api/comments/${ideaId}`);
-			comments = await res.json();
-	}
-
 	onMount(async () => {
 		loading = true;
 
@@ -77,7 +56,7 @@
 			goto('/login');
 		}
 
-		const maybeIdea = await getFullIdea(ideaId);
+		const maybeIdea = await getIdea(ideaId);
 
 		if (Error.isError(maybeIdea)) {
 			errorMessage = maybeIdea.message;
@@ -85,70 +64,33 @@
 			idea = maybeIdea;
 		}
 
-		let res = await fetch(`http://localhost:8000/api/comments/${ideaId}`);
-		comments = await res.json();
+		let maybeComments = await getComments(idea!._id);
+
+		if (Error.isError(maybeComments)) {
+			errorMessage = maybeComments.message;
+		} else {
+			comments = maybeComments;
+		}
 
 		loading = false;
-		console.log(idea);
 	});
 
-type Comment = {
-	content: string;
-	user_id: string;
-	replies: Comment[];
-};
+	async function addComment() {
+		await createComment({
+			content: comment,
+			ideaId: idea!._id
+		});
 
-let comments: Comment[] = [];
-let newComment = '';
-let replyContent: Record<number, string> = {};
+		let maybeComments = await getComments(idea!._id);
 
-async function addComment() {
-	if (!newComment.trim()) return;
+		if (Error.isError(maybeComments)) {
+			errorMessage = maybeComments.message;
+		} else {
+			comments = maybeComments;
+		}
 
-	const tokens = getTokens();
-	const response = await fetch(`http://localhost:8000/api/comments/`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${tokens.access_token}`
-		},
-		body: JSON.stringify({
-			content: newComment,
-			replies: [],
-			username: "",
-			idea_id: ideaId
-		})
-	});
-	
-	if (response.ok) {
-		await getComments();
+		comment = '';
 	}
-
-	newComment = '';
-}
-
-async function addReply(parent: Comment, indexKey: number) {
-	const content = replyContent[indexKey];
-	if (!content?.trim()) return;
-
-	const tokens = getTokens();
-	const response = await fetch(`http://localhost:8000/api/comments/${parent._id}/replies`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': `Bearer ${tokens.access_token}`
-		},
-		body: JSON.stringify({
-			content: content,
-		})
-	});
-	
-	if (response.ok) {
-		await getComments();
-	}
-
-	replyContent[indexKey] = '';
-}
 </script>
 
 <div class="relative min-h-screen w-full overflow-hidden">
@@ -160,7 +102,7 @@ async function addReply(parent: Comment, indexKey: number) {
 		style="background-image: url('{backgroundImage}')"
 	></div>
 	<!-- Główny kontener na treść i Modal (Centrowanie) -->
-	<div class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center mt-103421">
+	<div class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center mt-10">
 		{#if idea}
 			<div
 				class="rounded-4xl min-w-1/3 mb-5 bg-violet-800/30 p-3 px-10 text-center text-lg
@@ -246,7 +188,7 @@ async function addReply(parent: Comment, indexKey: number) {
 							class="grow overflow-y-auto text-base leading-relaxed
               text-white"
 						>
-							<p class="whitespace-pre-wrap">{idea.long_description || 'Brak opisu.'}</p>
+							<p class="whitespace-pre-wrap">{idea.longDescription || 'Brak opisu.'}</p>
 						</div>
 					</div>
 
@@ -259,7 +201,7 @@ async function addReply(parent: Comment, indexKey: number) {
 							class="grow overflow-y-auto text-base leading-relaxed
               text-white"
 						>
-							<p class="whitespace-pre-wrap">{idea.wanted_contributors || 'Brak opisu.'}</p>
+							<p class="whitespace-pre-wrap">{idea.wantedContributors || 'Brak opisu.'}</p>
 						</div>
 					</div>
 					<div
@@ -277,7 +219,7 @@ async function addReply(parent: Comment, indexKey: number) {
 							class="grow overflow-y-auto text-base leading-relaxed text-white w-full flex flex-col justify-center"
 						>
 							{#each comments as com}
-								<p>User: {com.content}</p>
+								<p>{com.username ?? "User"}: {com.content}</p>
 							{/each}
 							<input
 								type="text"
@@ -289,7 +231,7 @@ async function addReply(parent: Comment, indexKey: number) {
 							/>
 							<button
 								on:click={addComment}
-								class="rounded-lg bg-violet-900 px-2 py-2 text-white transition-colors hover:bg-violet-700"
+								class="rounded-lg bg-violet-900 px-2 py-2 text-white transition-colors hover:bg-violet-700 mt-5"
 							>
 								Add comment
 							</button>

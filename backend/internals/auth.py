@@ -90,7 +90,7 @@ async def authenticate_user(user: UserLogin) -> Optional[User]:
         Optional[UserGet]: Authenticated user if credentials are correct, else
         None.
     """
-    auth_users = await get_users(UserFilter(user.email))
+    auth_users = await get_users(UserFilter(email=user.email))
     auth_user = auth_users[0]
 
     if not auth_user:
@@ -99,7 +99,7 @@ async def authenticate_user(user: UserLogin) -> Optional[User]:
     if not verify_password(user.password, auth_user.password):
         return None
 
-    return auth_user
+    return UserGet.validate(auth_user.model_dump(exclude_none=True, by_alias=True))
 
 
 async def get_current_user(

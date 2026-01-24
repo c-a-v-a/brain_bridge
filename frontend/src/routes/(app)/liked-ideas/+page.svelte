@@ -1,46 +1,46 @@
 <script lang="ts">
-	import backgroundImage from '$lib/assets/dashboard-bg.png'; // Załóżmy, że masz ten obraz
-	// Import potrzebnych typów, funkcji API i nawigacji
-	import { getIdeas } from '$lib/api/ideasApi';
-	import type { IdeaGet } from '$lib/models/ideaModels';
+	import backgroundImage from '$lib/assets/dashboard-bg.png';
+	import { getIdeas, likedIdeas } from '$lib/api/idea';
+	import type { IdeaGet } from '$lib/models/idea';
 	import { onMount } from 'svelte';
-	import { refresh } from '$lib/api/tokenApi';
-	import { goto } from '$app/navigation'; // Fikcyjne dane do celów demonstracyjnych, zastąpione danymi z API
-	let ideas: IdeaGet[] = [
-		{ id: '1', author: 'Michał', title: 'AntCasino' },
-		{ id: '2', author: 'Anna', title: 'AI Photo Editor' },
-		{ id: '3', author: 'Piotr', title: 'Decentralized Chat' },
-		{ id: '4', author: 'Karolina', title: 'Green Energy Monitor' },
-		{ id: '5', author: 'Tomasz', title: 'Gamified Learning Platform' },
-		{ id: '6', author: 'Ewa', title: 'Local Food Delivery' },
-		{ id: '7', author: 'Rafał', title: 'Smart Home Security' },
-		{ id: '8', author: 'Magda', title: 'Travel Planner AI' },
-		{ id: '9', author: 'Krzysztof', title: 'Open Source CRM' }
-	];
+	import { refresh, validate } from '$lib/api/token';
+	import { goto } from '$app/navigation';
+	import type { UserGet } from '$lib/models/user';
 
+	let ideas: IdeaGet[] = [];
+	let user: UserGet;
 	let searchQuery: string = '';
 	let errorMessage: string | null;
-	let loading: boolean = true; // Logika ładowania danych, podobna do Twojego przykładu
+	let loading: boolean = true;
 
 	onMount(async () => {
-		loading = true; // Opcjonalna weryfikacja tokenu
-		// if (Error.isError(await refresh())) {
-		//   goto("/login");
-		// }
-		// const maybeIdeas = await getIdeas(); // Odkomentuj, aby użyć prawdziwego API
-		// if (Error.isError(maybeIdeas)) {
-		//   errorMessage = maybeIdeas.message;
-		// } else {
-		//   ideas = maybeIdeas;
-		// }
+		loading = true;
+
+		const maybeUser = await validate();
+
+		if (Error.isError(maybeUser)) {
+			goto('/login')
+		} else {
+			user = maybeUser;
+		}
+
+		if (Error.isError(await refresh())) {
+		  goto("/login");
+		}
+
+		const maybeIdeas = await likedIdeas(user._id);
+		if (Error.isError(maybeIdeas)) {
+		  errorMessage = maybeIdeas.message;
+		} else {
+		  ideas = maybeIdeas;
+		}
 
 		loading = false;
-	}); // Filtrowanie listy na podstawie zapytania
+	});
 
 	$: filteredIdeas = ideas.filter(
 		(idea) =>
-			idea.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			idea.author.toLowerCase().includes(searchQuery.toLowerCase())
+			idea.title.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 </script>
 
@@ -51,7 +51,7 @@
             blur-[40px]"
 		style="background-image: url('{backgroundImage}')"
 	></div>
-	<main class="relative z-10 flex min-h-screen w-full items-center justify-center">
+	<main class="relative z-10 flex min-h-screen w-full items-start justify-center">
 		{#if loading}
 			<p class="rounded-lg bg-black/50 p-8 text-xl text-white backdrop-blur-sm">
 				Ładowanie pomysłów...
@@ -62,8 +62,8 @@
 			</p>
 		{:else}
 			<div
-				class="w-full max-w-4xl max-h-[80vh] flex flex-col p-6 sm:p-10
-                rounded-[40px]
+				class="w-full max-w-4xl max-h-[90vh] flex flex-col p-6 sm:p-10
+                rounded-[40px] mt-15
                 bg-blue-900/40 text-white backdrop-blur-sm
                 shadow-2xl shadow-violet-900/50"
 			>
@@ -86,14 +86,14 @@
 				<div class="flex flex-col gap-4 overflow-y-auto pr-2">
 					{#each filteredIdeas as idea}
 						<button
-							class="grid grid-cols-12 gap-4 items-center h-12 px-4 rounded-xl
+							class="grid grid-cols-12 gap-4 items-center min-h-12 px-4 rounded-xl
                     bg-violet-800/50 border border-white/10
                     shadow-inner shadow-black/20 text-white text-base text-left
                     transition-all duration-200 hover:bg-violet-700/60
                     focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
-							on:click={() => goto(`/idea?id=${idea.id}`)}
+							on:click={() => goto(`/idea?id=${idea._id}`)}
 						>
-							<div class="col-span-4 truncate">{idea.author}</div>
+							<div class="col-span-4 truncate">{idea.author ?? "Author"}</div>
 							<div class="col-span-8 truncate">{idea.title}</div>
 						</button>
 					{:else}

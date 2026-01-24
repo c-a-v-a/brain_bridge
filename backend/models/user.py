@@ -65,7 +65,7 @@ class UserLogin(CamelModel):
         arbitrary_types_allowed = True
 
 
-class UserFilter(BaseModel):
+class UserFilter(CamelModel):
     """Model for searchin users in the database."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     username: Optional[str] = None

@@ -2,8 +2,21 @@ import type { TokenPair } from "$lib/models/token";
 import type { UserCreate, UserGet, UserLogin } from "$lib/models/user";
 import { setTokens } from "./token";
 
+/**
+ * Base API route for authentication endpoints.
+ */
 const API_ROUTE = "http://localhost:8000/api/auth";
 
+/**
+ * Authenticates a user and retrieves an access/refresh token pair.
+ *
+ * On successful login, the returned tokens are automatically
+ * stored using {@link setTokens}.
+ *
+ * @param {UserLogin} user - The user login credentials.
+ * @returns {Promise<TokenPair | Error>}
+ * Resolves with a token pair on success, or an Error on failure.
+ */
 export async function login(user: UserLogin): Promise<TokenPair | Error> {
   try {
     const response = await fetch(`${API_ROUTE}/login`, {
@@ -20,13 +33,19 @@ export async function login(user: UserLogin): Promise<TokenPair | Error> {
       return tokens;
     }
     
-    const error: Error = new Error(await response.text());
-    return error;
+    return new Error(await response.text());
   } catch (e) {
     return new Error("Connection error.");
   }
 }
 
+/**
+ * Registers a new user account.
+ *
+ * @param {UserCreate} user - The user registration data.
+ * @returns {Promise<UserGet | Error>}
+ * Resolves with the created user on success, or an Error on failure.
+ */
 export async function register(user: UserCreate): Promise<UserGet | Error> {
   try {
     const response = await fetch(`${API_ROUTE}/register`, {
@@ -38,12 +57,10 @@ export async function register(user: UserCreate): Promise<UserGet | Error> {
     });
     
     if (response.ok) {
-      const user: UserGet = await response.json();
-      return user;
+      return await response.json();
     }
     
-    const error: Error = new Error(await response.text());
-    return error;
+    return new Error(await response.text());
   } catch (e) {
     return new Error("Connection error.");
   }

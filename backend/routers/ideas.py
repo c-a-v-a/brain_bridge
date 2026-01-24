@@ -2,7 +2,7 @@
 liking, unliking, and user-specific idea queries.
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import List
 
@@ -12,10 +12,12 @@ from crud.ideas import (
     get_idea,
     get_ideas,
     get_all_ideas,
+    get_liked_ideas,
     like_idea,
     unlike_idea,
     update_idea
 )
+from internals.auth import get_current_user
 from models.idea import Idea, IdeaCreate, IdeaFilter, IdeaGet, IdeaUpdate
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
@@ -159,7 +161,7 @@ async def delete_idea_endpoint(idea_id: str) -> None:
     response_model=Idea,
     response_description="Liked idea."
 )
-async def like_idea_endpoint(idea_id: str) -> Idea:
+async def like_idea_endpoint(idea_id: str, current_user=Depends(get_current_user)) -> Idea:
     """Like an idea as a user.
 
     Args:
@@ -171,7 +173,7 @@ async def like_idea_endpoint(idea_id: str) -> Idea:
     Returns:
         Idea: Updated idea with new like included.
     """
-    idea = await like_idea(idea_id, data.user_id)
+    idea = await like_idea(idea_id, current_user.id)
 
     if not idea:
         raise HTTPException(
@@ -187,7 +189,7 @@ async def like_idea_endpoint(idea_id: str) -> Idea:
     response_model=Idea,
     response_description="Disliked idea."
 )
-async def unlike_idea_endpoint(idea_id: str, data: LikeRequest) -> Idea:
+async def unlike_idea_endpoint(idea_id: str, current_user=Depends(get_current_user)) -> Idea:
     """Remove a like from an idea.
 
     Args:
@@ -200,7 +202,7 @@ async def unlike_idea_endpoint(idea_id: str, data: LikeRequest) -> Idea:
     Returns:
         Idea: Updated idea without the user's like.
     """
-    idea = await unlike_idea(idea_id, data.user_id)
+    idea = await unlike_idea(idea_id, current_user.id)
 
     if not idea:
         raise HTTPException(
@@ -225,4 +227,4 @@ async def list_ideas_liked_by_user(user_id: str) -> List[IdeaGet]:
     Returns:
         List[IdeaGet]: Ideas the user has liked.
     """
-    return await get_ideas(IdeaFilter(user_id=user_id))
+    return await get_liked_ideas(user_id)

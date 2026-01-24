@@ -4,7 +4,7 @@ from bson import ObjectId
 from typing import List
 
 from crud.mongodb_connector import MongoDBConnector
-from models.comment import Comment, CommentFilter
+from models.comment import Comment, CommentCreate, CommentFilter
 
 
 client = MongoDBConnector()
@@ -12,7 +12,7 @@ db = client.get_db()
 comments = db["comments"]
 
 
-async def create_comment(user_id: str, comment: Comment) -> Comment:
+async def create_comment(user_id: str, username: str, comment: CommentCreate) -> Comment:
     """Insert new comment to the database and return it.
 
     Args:
@@ -23,6 +23,7 @@ async def create_comment(user_id: str, comment: Comment) -> Comment:
         Comment: An inserted comment.
     """
     comment.user_id = user_id
+    comment.username = username
     doc = comment.model_dump(by_alias=True, exclude_none=True)
     result = await comments.insert_one(doc)
     doc["_id"] = str(result.inserted_id)
@@ -43,6 +44,8 @@ async def get_comments(filters: CommentFilter) -> List[Comment]:
 
     if not query:
         return None
+
+    print(query)
 
     cursor = comments.find(query)
     result = []

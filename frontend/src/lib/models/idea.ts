@@ -6,9 +6,10 @@ export interface Link {
 }
 
 export interface Idea {
-  id: string;
+  _id: string;
   title: string;
   userId: string;
+  author: string;
   description: string;
   longDescription: string;
   links: Link[];
@@ -20,6 +21,7 @@ export interface Idea {
 export interface IdeaCreate {
   title: string;
   userId: string;
+  author: string;
   description: string;
   longDescription: string;
   links: Link[];
@@ -28,9 +30,10 @@ export interface IdeaCreate {
 }
 
 export interface IdeaGet {
-  id: string;
+  _id: string;
   title: string;
   userId: string;
+  author: string;
   description: string;
   likedByUser: string[];
 }
@@ -38,6 +41,7 @@ export interface IdeaGet {
 export interface IdeaUpdate {
   title?: string;
   userId?: string;
+  author: string;
   description?: string;
   longDescription?: string;
   links?: Link[];
@@ -47,5 +51,5 @@ export interface IdeaUpdate {
 }
 
 export interface IdeaFilter extends IdeaUpdate {
-  id?: string;
+  _id?: string;
 }

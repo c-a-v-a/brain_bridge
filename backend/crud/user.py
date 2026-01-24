@@ -4,7 +4,7 @@ from bson import ObjectId
 from typing import List, Optional
 
 from crud.mongodb_connector import MongoDBConnector
-from models.user import UserCreate, UserFilter, UserGet, UserUpdate
+from models.user import User, UserCreate, UserFilter, UserGet, UserUpdate
 
 client = MongoDBConnector()
 db = client.get_db()
@@ -73,7 +73,7 @@ async def get_users(filters: UserFilter) -> List[UserGet]:
     result = []
 
     async for doc in cursor:
-        result.append(UserGet.validate(doc))
+        result.append(User.validate(doc))
 
     return result
 

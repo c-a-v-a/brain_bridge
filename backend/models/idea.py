@@ -6,12 +6,12 @@ from typing import Annotated, List, Optional
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
 
-class Link(BaseModel):
+class Link(CamelModel):
     url: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1)
 
 
-class Idea(BaseModel):
+class Idea(CamelModel):
     """Full model representing an Idea document stored in MongoDB."""
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
     title: str = Field(..., min_length=1, max_length=200)
@@ -21,17 +21,10 @@ class Idea(BaseModel):
     links: List[Link]
     wanted_contributors: str
     images: Optional[List[str]] = Field(default_factory=list)
-    liked_by_user: List[PyObjectId] = Field(
-        default_factory=list,
-        alias="likedByUser"
-    )
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
+    liked_by_user: List[PyObjectId] = Field(default_factory=list)
 
 
-class IdeaCreate(BaseModel):
+class IdeaCreate(CamelModel):
     """Model for creating a new idea."""
     title: str = Field(..., min_length=1, max_length=200)
     user_id: PyObjectId
@@ -41,12 +34,8 @@ class IdeaCreate(BaseModel):
     wanted_contributors: str
     liked_by_user: List[PyObjectId] = Field(
         default_factory=list,
-        alias="likedByUser"
     )
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class IdeaGet(BaseModel):
@@ -56,13 +45,9 @@ class IdeaGet(BaseModel):
     user_id: PyObjectId
     description: str
     liked_by_user: List[PyObjectId] = Field(
-        default_factory=list,
-        alias="likedByUser"
+        default_factory=list
     )
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
 
 
 class IdeaUpdate(BaseModel):

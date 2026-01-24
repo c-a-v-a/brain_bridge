@@ -4,9 +4,10 @@
 	import { createIdea, getFullIdea, getIdeas } from '$lib/api/ideasApi';
 	import type { IdeaCreate, IdeaFull, IdeaGet } from '$lib/models/ideaModels';
 	import { page } from '$app/state';
-	import { refresh } from '$lib/api/tokenApi';
+	import { refresh, getTokens } from '$lib/api/tokenApi';
 	import { goto } from '$app/navigation';
 	import Modal from '$lib/components/Modal.svelte';
+	import { tokens } from '$lib/store/tokens';
 
 	const ideaId = page.url.searchParams.get('id');
 	let idea: IdeaFull | null = null;
@@ -90,6 +91,64 @@
 		loading = false;
 		console.log(idea);
 	});
+
+type Comment = {
+	content: string;
+	user_id: string;
+	replies: Comment[];
+};
+
+let comments: Comment[] = [];
+let newComment = '';
+let replyContent: Record<number, string> = {};
+
+async function addComment() {
+	if (!newComment.trim()) return;
+
+	const tokens = getTokens();
+	const response = await fetch(`http://localhost:8000/api/comments/`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'Authorization': `Bearer ${tokens.access_token}`
+		},
+		body: JSON.stringify({
+			content: newComment,
+			replies: [],
+			username: "",
+			idea_id: ideaId
+		})
+	});
+	
+	if (response.ok) {
+		await getComments();
+	}
+
+	newComment = '';
+}
+
+async function addReply(parent: Comment, indexKey: number) {
+	const content = replyContent[indexKey];
+	if (!content?.trim()) return;
+
+	const tokens = getTokens();
+	const response = await fetch(`http://localhost:8000/api/comments/${parent._id}/replies`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'Authorization': `Bearer ${tokens.access_token}`
+		},
+		body: JSON.stringify({
+			content: content,
+		})
+	});
+	
+	if (response.ok) {
+		await getComments();
+	}
+
+	replyContent[indexKey] = '';
+}
 </script>
 
 <div class="relative min-h-screen w-full overflow-hidden">

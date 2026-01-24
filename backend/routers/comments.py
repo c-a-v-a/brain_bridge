@@ -56,3 +56,30 @@ async def delete(
         )
 
     return
+
+
+@router.post(
+    "/{comment_id}/replies",
+    response_model=CommentInDB,
+    status_code=201,
+)
+async def add_reply_to_comment(
+    comment_id: str,
+    payload: CommentReply,  # expect content only from user
+    current_user=Depends(get_current_user),
+):
+    """
+    Add a reply to an existing comment.
+    """
+    user_id = str(current_user.id)
+
+    updated_comment = await comment_crud.add_reply(
+        comment_id=comment_id,
+        user_id=user_id,
+        content=payload.content,
+    )
+
+    if not updated_comment:
+        raise HTTPException(status_code=404, detail="Comment not found")
+
+    return updated_comment

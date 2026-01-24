@@ -1,6 +1,6 @@
 """Models for JWT tokens."""
 
-from pydantic import BaseModel
+from .base import CamelModel
 
 
 class TokenPair(BaseModel):

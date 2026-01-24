@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import backgroundImage from '$lib/assets/dashboard-bg.png';
-	import { createIdea } from '$lib/api/ideasApi';
-	import type { IdeaCreate } from '$lib/models/ideaModels';
+	import { createIdea } from '$lib/api/idea';
+	import type { IdeaCreate } from '$lib/models/idea';
+	import type { UserGet } from '$lib/models/user';
+	import { onMount } from 'svelte';
+	import { validate } from '$lib/api/token';
 
-	const HARDCODED_USER_ID = '60c72b2f9e4f500001010101';
-
+	let user: UserGet | Error;
 	let title = '';
 	let shortDescription = '';
 	let longDescription = '';
@@ -56,20 +58,20 @@
 		// Prepare data
 		const ideaData: IdeaCreate = {
 			title: title,
-			user_id: HARDCODED_USER_ID,
+			userId: (user as UserGet)._id,
 			description: shortDescription,
-			long_description: longDescription,
+			longDescription: longDescription,
 			links: links.filter((h) => h.text.trim() || h.url.trim()),
-			wanted_contributors: wantedContributors
+			wantedContributors: wantedContributors,
+			likedByUser: [],
+			author: (user as UserGet).username
 		};
 
 		const result = await createIdea(ideaData);
 
 		if (result instanceof Error) {
-			console.error('Error creating idea:', result);
 			alert(`An error occurred: ${result.message}`);
 		} else {
-			console.log('Idea successfully sent:', result);
 
 			uploadImages(result._id);
 
@@ -78,11 +80,14 @@
 	}
 
 	async function uploadImages(ideaId: string) {
-		console.log(ideaId);
 		try {
 			const formData = new FormData();
 
 			files.forEach((file: File) => formData.append('images', file));
+			
+			if (files.length === 0) {
+				return;
+			}
 
 			const response = await fetch(`http://localhost:8000/api/upload-images/${ideaId}`, {
 				method: 'POST',
@@ -100,6 +105,16 @@
 			alert(`An error occurred: ${error.message}`);
 		}
 	}
+
+	onMount(async () => {
+		let maybeUser = await validate();
+
+		if (Error.isError(maybeUser)) {
+			goto('/login');
+		} else {
+			user = maybeUser;
+		}
+	})
 
 	function handleCancel() {
 		goto('/');

@@ -1,20 +1,21 @@
 """FastAPI backend for BrainBridge app."""
 
+import os
 import uvicorn
+
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
-import os
-from fastapi.middleware.cors import CORSMiddleware
+from typing import List
 
 from crud.ideas import get_idea, update_idea
 from crud.mongodb_connector import MongoDBConnector
 from routers.auth import router as auth_router
 from routers.chat import router as chat_router
-from routers.ideas import router as ideas_router
 from routers.comments import router as comments_router
-from typing import List
+from routers.ideas import router as ideas_router
 
 app = FastAPI()
 UPLOAD_DIR = "uploads"
@@ -81,6 +82,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(ideas_router, prefix="/api")
 app.include_router(comments_router, prefix="/api")
+
 
 @asynccontextmanager
 async def lifespan():

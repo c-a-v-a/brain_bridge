@@ -1,36 +1,34 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import backgroundImage from '$lib/assets/dashboard-bg.png';
-	import { getIdeas } from '$lib/api/ideasApi';
-	import type { IdeaGet } from '$lib/models/ideaModels';
-	import { ideasStore } from '$lib/store/ideas';
+	import { getIdeas, likeIdea } from '$lib/api/idea';
+	import type { IdeaGet } from '$lib/models/idea';
+	import { validate } from '$lib/api/token';
+	import type { UserGet } from '$lib/models/user';
+	import { goto } from '$app/navigation';
 
 	// === STATE VARIABLES FOR IDEAS ===
 	let ideas: Array<IdeaGet> = []; // Full list of ideas
+	let user: UserGet | Error;
 	let currentIdea: IdeaGet | null = null; // Currently displayed random idea (Tinder Card)
 	let isLoading = true;
 	let errorFetchingIdeas = '';
 
-	const HARDCODED_USER_ID = '60c72b2f9e4f500001010101';
-
 	// Picks a random idea from the ideas array and sets it as currentIdea
 	function pickRandomIdea() {
-		if (ideas.length > 0) {
-			[currentIdea] = ideas.slice(-1);
+		if (ideas.length > 1) {
+			const newCurrent = ideas[Math.floor(Math.random() * ideas.length + 1) - 1];
 
-			ideas = ideas.filter((x, i) => i !== ideas.length - 1);
-
-			ideasStore.update((xs) => [...xs, currentIdea as IdeaGet]);
+			if (newCurrent._id === currentIdea?._id) {
+				pickRandomIdea();
+			} else {
+				currentIdea = newCurrent;
+			}
+		} else if (ideas.length === 1) {
+			currentIdea = ideas[0]
 		} else {
 			currentIdea = null;
 		}
-	}
-
-	function filterOutExisting(arr: IdeaGet[]): IdeaGet[] {
-		let existing: IdeaGet[];
-		ideasStore.subscribe((v) => (existing = v))();
-
-		return arr.filter((x) => !existing.some((e) => e.id === x.id));
 	}
 
 	// Loading all ideas from API
@@ -46,42 +44,32 @@
 			currentIdea = null;
 		} else {
 			ideas = result;
-			// To ensure you see something at the start, we add mock data
-			// You will remove this when the server returns data.
-			if (ideas.length === 0) {
-				ideas = [
-					{
-						id: 'mock1',
-						title: 'Spaceship Project',
-						user_id: 'dev_user',
-						description:
-							'Description of a super secret project to create an intergalactic merchant ship with warp drive.'
-					},
-					{
-						id: 'mock2',
-						title: 'SvelteKit CMS',
-						user_id: 'dev_user',
-						description:
-							'Lightweight and fast content management system built with SvelteKit and Tailwind CSS. Full API support.'
-					}
-				];
-			}
-
-			ideas = filterOutExisting(ideas);
+			ideas = ideas.filter(x => !x.likedByUser.includes((user as UserGet)._id));
 
 			pickRandomIdea();
 		}
 		isLoading = false;
+
 	}
 
-	onMount(loadIdeas);
+	onMount(async () => {
+		user = await validate();
 
-	function handleSwipe(action: string) {
-		console.log(`Action: ${action} for idea ${currentIdea!.id}`);
-		// In the future: send POST to server with action (like/dislike)
+		if (Error.isError(user)) {
+			goto('/login');
+		}
 
-		// Display next random idea
-		pickRandomIdea();
+		await loadIdeas();
+	});
+
+	async function handleSwipe(action: string) {
+		console.log(`Action: ${action} for idea ${currentIdea!._id}`);
+
+		if (currentIdea && action === "like") {
+			await likeIdea(currentIdea!._id);
+		}
+
+		await loadIdeas();
 	}
 </script>
 

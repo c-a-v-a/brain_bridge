@@ -1,17 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import backgroundImage from '$lib/assets/dashboard-bg.png';
-	import { createIdea, getFullIdea, getIdeas } from '$lib/api/ideasApi';
-	import type { IdeaCreate, IdeaFull, IdeaGet } from '$lib/models/ideaModels';
+	import { createIdea, getIdea, getIdeas } from '$lib/api/idea';
+	import type { IdeaCreate, Idea, IdeaGet } from '$lib/models/idea';
+	import { createComment, getComments } from '$lib/api/comment'
+	import type { Comment } from '$lib/models/comment';
 	import { page } from '$app/state';
-	import { refresh } from '$lib/api/tokenApi';
+	import { refresh, getTokens } from '$lib/api/token';
 	import { goto } from '$app/navigation';
 	import Modal from '$lib/components/Modal.svelte';
 
 	const ideaId = page.url.searchParams.get('id');
-	let idea: IdeaFull | null;
+	let idea: Idea | null = null;
 	let errorMessage: string | null;
 	let loading: boolean = true;
+	let comment: string = "";
+	let comments: Comment[] = [];
+	let newComment = '';
+	let replyContent: Record<number, string> = {};
 
 	let showModal = false;
 	let currentImageIndex = 0;
@@ -50,16 +56,41 @@
 			goto('/login');
 		}
 
-		const maybeIdea = await getFullIdea(ideaId);
+		const maybeIdea = await getIdea(ideaId);
 
 		if (Error.isError(maybeIdea)) {
 			errorMessage = maybeIdea.message;
 		} else {
 			idea = maybeIdea;
 		}
+
+		let maybeComments = await getComments(idea!._id);
+
+		if (Error.isError(maybeComments)) {
+			errorMessage = maybeComments.message;
+		} else {
+			comments = maybeComments;
+		}
+
 		loading = false;
-		console.log(idea);
 	});
+
+	async function addComment() {
+		await createComment({
+			content: comment,
+			ideaId: idea!._id
+		});
+
+		let maybeComments = await getComments(idea!._id);
+
+		if (Error.isError(maybeComments)) {
+			errorMessage = maybeComments.message;
+		} else {
+			comments = maybeComments;
+		}
+
+		comment = '';
+	}
 </script>
 
 <div class="relative min-h-screen w-full overflow-hidden">
@@ -71,7 +102,7 @@
 		style="background-image: url('{backgroundImage}')"
 	></div>
 	<!-- Główny kontener na treść i Modal (Centrowanie) -->
-	<div class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center">
+	<div class="relative z-10 flex min-h-screen w-full flex-col items-center justify-center mt-10">
 		{#if idea}
 			<div
 				class="rounded-4xl min-w-1/3 mb-5 bg-violet-800/30 p-3 px-10 text-center text-lg
@@ -81,7 +112,7 @@
 			</div>
 		{/if}
 		<!-- Kontener na wyświetlanie pomysłów (wyśrodkowany) -->
-		<div class="flex w-full flex-col items-center justify-center">
+		<div class="flex w-full flex-col items-center justify-start">
 			{#if loading}
 				<p class="rounded-lg bg-black/50 p-8 text-xl text-white backdrop-blur-sm">
 					Ładowanie pomysłu...
@@ -157,7 +188,7 @@
 							class="grow overflow-y-auto text-base leading-relaxed
               text-white"
 						>
-							<p class="whitespace-pre-wrap">{idea.long_description || 'Brak opisu.'}</p>
+							<p class="whitespace-pre-wrap">{idea.longDescription || 'Brak opisu.'}</p>
 						</div>
 					</div>
 
@@ -170,7 +201,40 @@
 							class="grow overflow-y-auto text-base leading-relaxed
               text-white"
 						>
-							<p class="whitespace-pre-wrap">{idea.wanted_contributors || 'Brak opisu.'}</p>
+							<p class="whitespace-pre-wrap">{idea.wantedContributors || 'Brak opisu.'}</p>
+						</div>
+					</div>
+					<div
+						class="flex grow flex-col rounded-lg border border-white/10
+          bg-violet-500/40 p-4 shadow-inner shadow-black/50"
+					>
+						<label class="mb-2 block text-sm text-white/70"> Comments: </label>
+						<div
+							class="grow overflow-y-auto text-base leading-relaxed
+              text-white"
+						>
+							
+						</div>
+						<div
+							class="grow overflow-y-auto text-base leading-relaxed text-white w-full flex flex-col justify-center"
+						>
+							{#each comments as com}
+								<p>{com.username ?? "User"}: {com.content}</p>
+							{/each}
+							<input
+								type="text"
+								placeholder="Comment"
+								bind:value={comment}
+								class="flex-2 mt-5 rounded-lg border border-white/30
+																	bg-white/15 p-2 text-white placeholder-white/70 outline-none
+																	focus:border-white/50"
+							/>
+							<button
+								on:click={addComment}
+								class="rounded-lg bg-violet-900 px-2 py-2 text-white transition-colors hover:bg-violet-700 mt-5"
+							>
+								Add comment
+							</button>
 						</div>
 					</div>
 				</div>

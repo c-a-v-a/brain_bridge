@@ -1,15 +1,14 @@
 """Module responsible for handling user authentication and JWT tokens."""
 
-import jwt
-from datetime import timedelta, datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, WebSocket
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import jwt
 from pwdlib import PasswordHash
 from typing import Optional
 
-from crud.user import get_user_by_email
-from models.user import UserGet, UserLogin, User
+from crud.user import get_users
+from models.user import User, UserFilter, UserGet, UserLogin
 from settings import Settings
 
 auth_scheme = HTTPBearer()
@@ -91,21 +90,30 @@ async def authenticate_user(user: UserLogin) -> Optional[User]:
         Optional[UserGet]: Authenticated user if credentials are correct, else
         None.
     """
-    auth_user = await get_user_by_email(user.email)
+    auth_users = await get_users(UserFilter(email=user.email))
+    auth_user = auth_users[0]
 
-    if not user:
+    if not auth_user:
         return None
 
     if not verify_password(user.password, auth_user.password):
         return None
 
-    return auth_user
+    return UserGet.validate(auth_user.model_dump(exclude_none=True, by_alias=True))
+
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(auth_scheme),
 ) -> UserGet:
-    """Retrieve the current authenticated user from a JWT token."""
-    token = credentials.credentials  # <- tu bierzemy sam token z nagłówka
+    """Retrieve the current authenticated user from a JWT token.
+
+    Raises:
+        HTTPException: If token is invalid or user is not found.
+
+    Returns:
+        UserGet: Authenticated user.
+    """
+    token = credentials.credentials
 
     if len(token) < 1:
         raise HTTPException(401, "Missing token")
@@ -120,12 +128,12 @@ async def get_current_user(
     if not email:
         raise HTTPException(401, "Invalid token")
 
-    user = await get_user_by_email(email)
+    users = await get_users(UserFilter(email=email))
 
-    if not user:
+    if not users:
         raise HTTPException(401, "User not found")
 
-    return user
+    return users[0]
 
 
 async def get_current_user_ws(websocket: WebSocket) -> UserGet:
@@ -162,9 +170,9 @@ async def get_current_user_ws(websocket: WebSocket) -> UserGet:
     if not email:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = await get_user_by_email(email)
+    users = await get_users(UserFilter(email=email))
 
-    if not user:
+    if not users:
         raise HTTPException(status_code=401, detail="User not found")
 
-    return user
+    return users[0]

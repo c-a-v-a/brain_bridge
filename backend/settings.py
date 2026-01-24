@@ -1,6 +1,7 @@
 """Module providing singleton class for application settings."""
 
 import os
+
 from typing import Optional, NoReturn
 
 

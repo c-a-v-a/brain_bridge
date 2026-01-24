@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { register } from '$lib/api/userApi';
-	import type { UserCreate, UserGet } from '$lib/models/userModels';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { refresh } from '$lib/api/tokenApi';
+
+	import { register } from '$lib/api/user';
+	import { refresh } from '$lib/api/token';
+	import type { UserCreate, UserGet } from '$lib/models/user';
 
 	let user: UserCreate = {
 		username: '',
@@ -11,7 +12,7 @@
 		surname: '',
 		email: '',
 		password: '',
-		is_admin: false
+		isAdmin: false
 	};
 
 	async function handleSubmit() {
